@@ -476,6 +476,14 @@ class ParameterLine : public sf::Drawable, public sf::Transformable, public std:
             KeyPressVisFixedHeight,
             KeyPressVisMty,
 
+            KeyPressVisOsuAltHint,
+            KeyPressVisOsuAltColl,
+            KeyPressVisOsuAltToggle,
+            KeyPressVisOsuAltNormalColor,
+            KeyPressVisOsuAltSkipColor,
+            KeyPressVisOsuAltLockColor,
+            KeyPressVisOsuAltMty,
+
             KeyPressVisAdvModeColl,
             KeyPressVisAdvMode,
             KeyPressVisAdvModeSpace,

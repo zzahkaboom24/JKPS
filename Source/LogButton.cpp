@@ -12,8 +12,13 @@ float LogButton::statMaxKeysPerSecond(0);
 unsigned LogButton::statTotal(0);
 float LogButton::statBeatsPerMinute(0);
 
+// osu!alt mode shared state
+static int sLastGroup(-1);           // last key group that was pressed (0 = left, 1 = right)
+static bool sHeld[4] = {};           // whether each of the first 4 buttons is currently held
+
 LogButton::LogButton(const unsigned idx, LogKey &key)
 : mState(false)
+, mPressAltColor(sf::Color::White)
 , mLastAccumulateBpmBufferIndex(mBuffer.size())
 , mKey(key)
 , mKeysPerSecond(0)
@@ -33,6 +38,10 @@ void LogButton::processRealtimeInput()
     auto &bufferElem = mBuffer[mBufferIndex];
     const auto prevState = mState;
     mState = mKey.isPressed();
+
+    // Update osu!alt held state
+    if (Settings::OsuAltMode && mBtnIdx < 4u)
+        sHeld[mBtnIdx] = mState;
 
     if (bufferElem > 0u)
     {
@@ -54,6 +63,21 @@ void LogButton::processRealtimeInput()
         statTotal += amtToAdd;
         Settings::Total += amtToAdd;
         Settings::KeysTotal[mBtnIdx] += amtToAdd;
+
+        // Update osu!alt group tracking on new press
+        if (Settings::OsuAltMode && mBtnIdx < 4u)
+        {
+            const int group = static_cast<int>(mBtnIdx % 2u); // 0 = left (0,2), 1 = right (1,3)
+            // Compute color BEFORE updating sLastGroup so skip detection sees prior state
+            const unsigned partner = mBtnIdx ^ 2u;
+            if (partner < 4u && sHeld[partner])
+                mPressAltColor = Settings::OsuAltLockColor;
+            else if (sLastGroup == group)
+                mPressAltColor = Settings::OsuAltSkipColor;
+            else
+                mPressAltColor = Settings::OsuAltNormalColor;
+            sLastGroup = group;
+        }
     }
 
     mPrevKpsBuffer[mPrevKpsBufferIndex] = mKeysPerSecond;
@@ -121,4 +145,9 @@ float LogButton::getLocalBeatsPerMinute() const
 
     // 15 = 60 (sec) / 4 (1/4 time signature for streams)
     return prevKpsSum / mPrevKpsBuffer.size() * 15;
+}
+
+sf::Color LogButton::getAltColor() const
+{
+    return mPressAltColor;
 }

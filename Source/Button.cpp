@@ -19,6 +19,8 @@ Button::Button(LogKey &key, const TextureHolder &textureHolder, const FontHolder
 
 void Button::update(float deltaSeconds)
 {
+    if (Settings::OsuAltMode && Settings::KeyPressVisToggle)
+        GfxButton::setNextBarColor(getAltColor());
     GfxButton::update(deltaSeconds, LogButton::isButtonPressed());
     setTextStrings();
     controlBounds();

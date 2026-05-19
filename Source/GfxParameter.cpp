@@ -134,4 +134,5 @@ void GfxParameter::setRightTexture()
         mSprite.emplace(mTextures->get(Textures::vMark));
     else
         mSprite.emplace(mTextures->get(Textures::xMark));
+    mSprite->setOrigin(static_cast<sf::Vector2f>(mSprite->getTexture().getSize()) / 2.f);
 }

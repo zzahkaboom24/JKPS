@@ -10,6 +10,7 @@
 
 #include <array>
 #include <memory>
+#include <vector>
 
 
 
@@ -46,6 +47,8 @@ class GfxButton : public sf::Drawable, public sf::Transformable
         static float getWidth(unsigned idx);
         static float getHeight(unsigned idx);
         static TextID getTextIdToDisplay();
+
+        void setNextBarColor(sf::Color color);
 
         virtual ~GfxButton();
 
@@ -91,8 +94,12 @@ class GfxButton : public sf::Drawable, public sf::Transformable
 
                 void scaleTexture(sf::Vector2f buttonSize);
 
+                // Sets the color for the next bar that will be created.
+                void setNextBarColor(sf::Color color);
+
 
             private:
+                std::vector<sf::Color> mBarColors;  // per-bar baked color (indexed by rect slot)
                 sf::Transform getPressRectTransform(sf::Transform transform) const;
                 float getVertexProgress(size_t vertexNumber, float vertexHeight) const;
                 sf::Color getVertexColor(const sf::VertexArray &vertexArray, size_t vertexIndex) const;
@@ -112,6 +119,7 @@ class GfxButton : public sf::Drawable, public sf::Transformable
                 std::vector<sf::Text> mTexts;
                 sf::Vector2f mEmitterPosition;
                 sf::Vector2f mLastRectSize;
+                sf::Color mNextBarColor;  // Color for the next bar (osu!alt mode)
         };
 
 

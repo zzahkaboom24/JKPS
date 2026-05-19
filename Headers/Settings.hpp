@@ -149,6 +149,12 @@ namespace Settings
     extern float KeyPressWidthScale;
     extern float KeyPressFixedHeight;
 
+    // [Key press visualization 4k osu!standard alt]
+    extern bool  OsuAltMode;
+    extern sf::Color OsuAltNormalColor;
+    extern sf::Color OsuAltSkipColor;
+    extern sf::Color OsuAltLockColor;
+
     // [Key press visualization advanced settings]
     extern bool KeyPressVisAdvSettingsMode;
     extern Container<float> KeyPressVisAdvSpeed;

@@ -860,6 +860,7 @@ bool ParameterLine::isEmpty(ParameterLine::ID id)
         id == ParameterLine::ID::MainWndwMty ||
         id == ParameterLine::ID::KPSWndwMty ||
         // id == ParameterLine::ID::KeyPressVisMty ||
+        // id == ParameterLine::ID::KeyPressVisOsuAltMty ||
         id == ParameterLine::ID::KeyPressVisAdvModeMty ||
         id == ParameterLine::ID::OtherMty ||
         id == ParameterLine::ID::HotkeyMty ||
@@ -1341,6 +1342,11 @@ ParameterLine::ID ParameterLine::parIdToParLineId(LogicalParameter::ID id)
         case LogicalParameter::ID::KeyPressVisWidthScale: return ParameterLine::ID::KeyPressVisWidthScale;
         case LogicalParameter::ID::KeyPressVisFixedHeight: return ParameterLine::ID::KeyPressVisFixedHeight;
         
+        case LogicalParameter::ID::KeyPressVisOsuAltToggle: return ParameterLine::ID::KeyPressVisOsuAltToggle;
+        case LogicalParameter::ID::KeyPressVisOsuAltNormalColor: return ParameterLine::ID::KeyPressVisOsuAltNormalColor;
+        case LogicalParameter::ID::KeyPressVisOsuAltSkipColor: return ParameterLine::ID::KeyPressVisOsuAltSkipColor;
+        case LogicalParameter::ID::KeyPressVisOsuAltLockColor: return ParameterLine::ID::KeyPressVisOsuAltLockColor;
+
         case LogicalParameter::ID::KeyPressVisAdvMode: return ParameterLine::ID::KeyPressVisAdvMode;
         case LogicalParameter::ID::KeyPressVisAdvModeSpeed1: return ParameterLine::ID::KeyPressVisAdvModeSpeed1;
         case LogicalParameter::ID::KeyPressVisAdvModeRotation1: return ParameterLine::ID::KeyPressVisAdvModeRotation1;

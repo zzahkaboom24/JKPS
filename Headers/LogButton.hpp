@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <array>
+#include <SFML/Graphics/Color.hpp>
 
 
 class LogButton
@@ -23,6 +24,10 @@ class LogButton
         static float getMaxKeysPerSecond();
         static unsigned getTotal();
         static float getBeatsPerMinute();
+
+        // Returns the color for the next press bar under osu!alt mode.
+        // Must be called BEFORE processRealtimeInput() records the new press.
+        sf::Color getAltColor() const;
     
 
     protected:
@@ -45,6 +50,7 @@ class LogButton
     private:
         const unsigned mBtnIdx;
         bool mState;
+        sf::Color mPressAltColor;
 		unsigned mLastAccumulateBpmBufferIndex;
         
         // Calculation related

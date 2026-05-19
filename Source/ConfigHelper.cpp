@@ -111,6 +111,7 @@ bool isNextCollection(LogicalParameter::ID id)
         LogicalParameter::ID::BgTxtr,
         LogicalParameter::ID::KPSWndwEn,
         LogicalParameter::ID::KeyPressVisToggle,
+        LogicalParameter::ID::KeyPressVisOsuAltToggle,
         LogicalParameter::ID::KeyPressVisAdvMode,
         LogicalParameter::ID::OtherSaveStats,
         LogicalParameter::ID::HotkeyAddKeys,

@@ -407,6 +407,7 @@ void Menu::initCollectionNames()
     mCollectionNames.emplace_back("[Main window]");
     mCollectionNames.emplace_back("[Extra KPS window]");
     mCollectionNames.emplace_back("[Key press visualization]");
+    mCollectionNames.emplace_back("[Key press visualization 4k osu!standard alt]");
     mCollectionNames.emplace_back("[Key press visualization advanced settings]");
     mCollectionNames.emplace_back("[Other]");
     mCollectionNames.emplace_back("[Hotkeys]");
@@ -694,6 +695,11 @@ void Menu::buildParametersMap()
     mParameters.emplace(std::make_pair(LogicalParameter::ID::KeyPressVisWidthScale,       new LogicalParameter(LogicalParameter::Type::Float,         &Settings::KeyPressWidthScale,                          "Bonus width scale (%)", "100", -1000, 1000)));
     mParameters.emplace(std::make_pair(LogicalParameter::ID::KeyPressVisFixedHeight,      new LogicalParameter(LogicalParameter::Type::Float,         &Settings::KeyPressFixedHeight,                         "Fixed height to replace holds", "0", 0, 300)));
     
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::KeyPressVisOsuAltToggle,     new LogicalParameter(LogicalParameter::Type::Bool,          &Settings::OsuAltMode,                                  "Enable 4k osu!standard alt mode", "False")));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::KeyPressVisOsuAltNormalColor,new LogicalParameter(LogicalParameter::Type::Color,         &Settings::OsuAltNormalColor,                            "Normal alternation color", "170,0,255,255")));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::KeyPressVisOsuAltSkipColor,  new LogicalParameter(LogicalParameter::Type::Color,         &Settings::OsuAltSkipColor,                              "Skip (wrong alt) color", "255,0,0,255")));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::KeyPressVisOsuAltLockColor,  new LogicalParameter(LogicalParameter::Type::Color,         &Settings::OsuAltLockColor,                              "KeyLock (same lane held) color", "255,220,0,255")));
+
     mParameters.emplace(std::make_pair(LogicalParameter::ID::KeyPressVisAdvMode,          new LogicalParameter(LogicalParameter::Type::Bool,          &Settings::KeyPressVisAdvSettingsMode,                  "Enable advanced mode for key press visualization", "False")));
     for (auto i = 0lu; i < Settings::SupportedAdvancedKeysNumber; ++i)
     {
@@ -716,7 +722,7 @@ void Menu::buildParametersMap()
         mParameters.emplace(std::make_pair(fixHeight,                                     new LogicalParameter(LogicalParameter::Type::Float,         &Settings::KeyPressAdvFixedHeight[i],                   iStr + ". Fixed height to replace holds", "0", 0, 300)));
     }
 
-    mParameters.emplace(std::make_pair(LogicalParameter::ID::OtherSaveStats,              new LogicalParameter(LogicalParameter::Type::Bool,          &Settings::SaveStats,                                   "Update statistics on quit", "False")));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::OtherSaveStats,              new LogicalParameter(LogicalParameter::Type::Bool,          &Settings::SaveStats,                                   "Update statistics on quit", "True")));
     mParameters.emplace(std::make_pair(LogicalParameter::ID::OtherShowOppOnAlt,           new LogicalParameter(LogicalParameter::Type::Bool,          &Settings::ShowOppOnAlt,                                "Show opposite key values on alt press", "True")));
     mParameters.emplace(std::make_pair(LogicalParameter::ID::OtherMultpl,                 new LogicalParameter(LogicalParameter::Type::Unsigned,      &Settings::ButtonPressMultiplier,                       "Value to multiply on click", "1", 0, 1000000)));
 
@@ -813,6 +819,18 @@ void Menu::buildParameterLines()
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisColl, new ParameterLine(parP, mFonts, mTextures, mWindow)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
 
+    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Hint, nullptr, "When enabled, disables \"Key press vis advanced settings\".\nKeys 1&3=left group, keys 2&4=right group (4-key layout only).\nAlternate normally for purple, repeat same group=red, hold\nboth lane-keys simultaneously=yellow."));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisOsuAltHint, new ParameterLine(parP, mFonts, mTextures, mWindow)));
+    mParameterLines[ParameterLine::ID::KeyPressVisOsuAltHint]->setCharacterSize(15u);
+
+    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, mCollectionNames.at(collectionNameIdx++)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisOsuAltColl, new ParameterLine(parP, mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisOsuAltToggle, new ParameterLine(mParameters.at(LogicalParameter::ID::KeyPressVisOsuAltToggle), mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisOsuAltNormalColor, new ParameterLine(mParameters.at(LogicalParameter::ID::KeyPressVisOsuAltNormalColor), mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisOsuAltSkipColor, new ParameterLine(mParameters.at(LogicalParameter::ID::KeyPressVisOsuAltSkipColor), mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisOsuAltLockColor, new ParameterLine(mParameters.at(LogicalParameter::ID::KeyPressVisOsuAltLockColor), mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisOsuAltMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
+
     parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, mCollectionNames.at(collectionNameIdx++)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisAdvModeColl, new ParameterLine(parP, mFonts, mTextures, mWindow)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::KeyPressVisAdvModeSpace, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
@@ -820,6 +838,9 @@ void Menu::buildParameterLines()
 
     parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, mCollectionNames.at(collectionNameIdx++)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::OtherColl, new ParameterLine(parP, mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::OtherSaveStats,    new ParameterLine(mParameters.at(LogicalParameter::ID::OtherSaveStats),    mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::OtherShowOppOnAlt, new ParameterLine(mParameters.at(LogicalParameter::ID::OtherShowOppOnAlt), mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::OtherMultpl,       new ParameterLine(mParameters.at(LogicalParameter::ID::OtherMultpl),       mFonts, mTextures, mWindow)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::OtherMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
 
     parP = sPtr(new LogicalParameter(LogicalParameter::Type::Hint, nullptr, "Click a hotkey to edit it, then press keys to form the combo.\nBackspace - clear, Enter / Escape - confirm"));
@@ -828,7 +849,15 @@ void Menu::buildParameterLines()
 
     parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, mCollectionNames.at(collectionNameIdx++)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyColl, new ParameterLine(parP, mFonts, mTextures, mWindow)));
-
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyAddKeys,     new ParameterLine(mParameters.at(LogicalParameter::ID::HotkeyAddKeys),     mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyRmKeys,      new ParameterLine(mParameters.at(LogicalParameter::ID::HotkeyRmKeys),      mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyAddMouse,    new ParameterLine(mParameters.at(LogicalParameter::ID::HotkeyAddMouse),    mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyRmMouse,     new ParameterLine(mParameters.at(LogicalParameter::ID::HotkeyRmMouse),     mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyExit,        new ParameterLine(mParameters.at(LogicalParameter::ID::HotkeyExit),        mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyReset,       new ParameterLine(mParameters.at(LogicalParameter::ID::HotkeyReset),       mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyMenu,        new ParameterLine(mParameters.at(LogicalParameter::ID::HotkeyMenu),        mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyKPSWindow,   new ParameterLine(mParameters.at(LogicalParameter::ID::HotkeyKPSWindow),   mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyGraphWindow, new ParameterLine(mParameters.at(LogicalParameter::ID::HotkeyGraphWindow), mFonts, mTextures, mWindow)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
 
     parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, mCollectionNames.at(collectionNameIdx++)));
@@ -851,9 +880,6 @@ void Menu::buildParameterLines()
 
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::InfoMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
 
-
-    mParameterLines.emplace(std::make_pair(ParameterLine::ID::InfoMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
-
     parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, "Program version: " + std::string(PROGRAM_VERSION)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::ProgramVersion, new ParameterLine(parP, mFonts, mTextures, mWindow)));
 
@@ -861,18 +887,26 @@ void Menu::buildParameterLines()
 
     positionMenuLines();
 
-    // Shift all Hotkeys tab items below the hint down so the gap matches
-    // the standard 10px spacing between rows (hint is taller than one step).
+    // Shift items below each multi-line hint to preserve the standard 10px gap.
+    auto shiftBelow = [&](ParameterLine::ID hintId, ParameterLine::ID firstId, ParameterLine::ID lastId)
     {
-        const float hintHeight = mParameterLines.at(ParameterLine::ID::HotkeyHint)->getHeight();
-        const float hintY      = mParameterLines.at(ParameterLine::ID::HotkeyHint)->getPosition().y;
-        const float collY      = mParameterLines.at(ParameterLine::ID::HotkeyColl)->getPosition().y;
+        const float hintHeight = mParameterLines.at(hintId)->getHeight();
+        const float hintY      = mParameterLines.at(hintId)->getPosition().y;
+        const float collY      = mParameterLines.at(firstId)->getPosition().y;
         const float shift      = hintY + hintHeight + 10.f - collY;
-        const auto  first      = static_cast<size_t>(ParameterLine::ID::HotkeyColl);
-        const auto  last       = static_cast<size_t>(ParameterLine::ID::HotkeyMty);
+        const auto  first      = static_cast<size_t>(firstId);
+        const auto  last       = static_cast<size_t>(lastId);
         for (auto i = first; i <= last; ++i)
             mParameterLines.at(static_cast<ParameterLine::ID>(i))->move({0.f, shift});
-    }
+    };
+
+    shiftBelow(ParameterLine::ID::KeyPressVisOsuAltHint,
+               ParameterLine::ID::KeyPressVisOsuAltColl,
+               ParameterLine::ID::KeyPressVisAdvModeMty);
+
+    shiftBelow(ParameterLine::ID::HotkeyHint,
+               ParameterLine::ID::HotkeyColl,
+               ParameterLine::ID::HotkeyMty);
 }
 
 void Menu::positionMenuLines()

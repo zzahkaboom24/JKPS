@@ -448,6 +448,11 @@ struct LogicalParameter
             KeyPressVisWidthScale,
             KeyPressVisFixedHeight,
 
+            KeyPressVisOsuAltToggle,
+            KeyPressVisOsuAltNormalColor,
+            KeyPressVisOsuAltSkipColor,
+            KeyPressVisOsuAltLockColor,
+
             KeyPressVisAdvMode,
             KeyPressVisAdvModeSpeed1,
             KeyPressVisAdvModeRotation1,

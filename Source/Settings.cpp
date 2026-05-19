@@ -133,6 +133,12 @@ sf::Color KeyPressVisColor;
 float KeyPressWidthScale;
 float KeyPressFixedHeight;
 
+// [Key press visualization 4k osu!standard alt]
+bool  OsuAltMode;
+sf::Color OsuAltNormalColor;
+sf::Color OsuAltSkipColor;
+sf::Color OsuAltLockColor;
+
 // [Key press visualization advanced settings]
 bool KeyPressVisAdvSettingsMode;
 Container<float> KeyPressVisAdvSpeed;

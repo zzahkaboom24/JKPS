@@ -396,6 +396,11 @@ void GfxButton::setShowBounds(bool flag, int idx)
     mSelectedKeyBounds = idx;
 }
 
+void GfxButton::setNextBarColor(sf::Color color)
+{
+    mEmitter.setNextBarColor(color);
+}
+
 GfxButton::~GfxButton()
 {    
 }
@@ -404,8 +409,10 @@ GfxButton::~GfxButton()
 GfxButton::RectEmitter::RectEmitter(unsigned btnIdx)
 : mBtnIdx(btnIdx)
 , mMiddleVertecies(sf::PrimitiveType::Triangles, 1500u) // 250 rects * 6 vertices
+, mNextBarColor(sf::Color::White)
 {
     const auto count = mMiddleVertecies.getVertexCount() / 6;
+    mBarColors.assign(count, sf::Color::White);
     for (auto i = 0ul; i < count; ++i)
         mAvailableRectIndices.emplace_back(i);
 }
@@ -541,6 +548,7 @@ void GfxButton::RectEmitter::create(float deltaSeconds, sf::Vector2f buttonSize)
     const auto halfRectSize = rectSize / 2.f;
 
     const auto rectIndex = mAvailableRectIndices.back();
+    mBarColors[rectIndex] = mNextBarColor;  // bake color at bar creation
     const auto firstVertexIndex = rectIndex * 6ul;
 
     // SFML 3: mapped 4 quad vertices to 6 triangle vertices
@@ -561,6 +569,11 @@ void GfxButton::RectEmitter::create(float deltaSeconds, sf::Vector2f buttonSize)
 
 void GfxButton::RectEmitter::scaleTexture(sf::Vector2f buttonSize)
 {
+}
+
+void GfxButton::RectEmitter::setNextBarColor(sf::Color color)
+{
+    mNextBarColor = color;
 }
 
 sf::Transform GfxButton::RectEmitter::getPressRectTransform(sf::Transform transform) const
@@ -594,8 +607,19 @@ sf::Color GfxButton::RectEmitter::getVertexColor(const sf::VertexArray &vertexAr
 {
     const auto isInSupportedRange = mBtnIdx < Settings::SupportedAdvancedKeysNumber;
     const auto advMode = isInSupportedRange && Settings::KeyPressVisAdvSettingsMode;
-    auto color = !advMode ? Settings::KeyPressVisColor : 
-        Settings::KeyPressVisAdvColor[mBtnIdx];
+
+    // osu!alt mode overrides the bar color (disables both normal and advanced color)
+    sf::Color color;
+    if (Settings::OsuAltMode && Settings::KeyPressVisToggle)
+    {
+        // Use the per-bar baked color so existing bars are never retroactively recolored
+        color = mBarColors[vertexIndex / 6ul];
+    }
+    else
+    {
+        color = !advMode ? Settings::KeyPressVisColor :
+            Settings::KeyPressVisAdvColor[mBtnIdx];
+    }
 
     color.a -= static_cast<std::uint8_t>(color.a * getVertexProgress(vertexIndex, vertexArray[vertexIndex].position.y));
     return color;
