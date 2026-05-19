@@ -627,6 +627,19 @@ class ParameterLine : public sf::Drawable, public sf::Transformable, public std:
             OtherMultpl,
             OtherMty,
 
+            HotkeyHint,
+            HotkeyColl,
+            HotkeyAddKeys,
+            HotkeyRmKeys,
+            HotkeyAddMouse,
+            HotkeyRmMouse,
+            HotkeyExit,
+            HotkeyReset,
+            HotkeyMenu,
+            HotkeyKPSWindow,
+            HotkeyGraphWindow,
+            HotkeyMty,
+
             SaveStatColl,
             SaveStatMaxKPS,
             SaveStatTotal,
@@ -659,21 +672,6 @@ class ParameterLine : public sf::Drawable, public sf::Transformable, public std:
             Info4,
             InfoMty,
 
-            HotkeyColl,
-            HotKey1,
-            HotKey2,
-            HotKey3,
-            HotKey4,
-            HotKey5,
-            HotKey6,
-            HotKey7,
-            HotKey8,
-            HotKey9,
-            HotKey10,
-            HotKey11,
-            HotKey12,
-            HotKey13,
-
             ProgramVersion,
             LastLine
         };
@@ -695,6 +693,8 @@ class ParameterLine : public sf::Drawable, public sf::Transformable, public std:
 
         const std::shared_ptr<LogicalParameter> getParameter() const;
         LogicalParameter::Type getType() const;
+
+        float getHeight() const;
 
         static void setColor(sf::Color color);
         static ParameterLine::ID parIdToParLineId(LogicalParameter::ID id);

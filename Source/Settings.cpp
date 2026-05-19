@@ -158,18 +158,17 @@ unsigned char* DefaultGreenscreenBackgroundTexture = GreenscreenTexture;
 unsigned char* DefaultKPSWindowFont = KPSWindowDefaultFont;
 unsigned char* KeyPressVisTexture = KeyPressVisTextureH;
 
-// Hot keys
-sf::Keyboard::Key KeyToIncreaseKeys = sf::Keyboard::Equal;
-sf::Keyboard::Key AltKeyToIncreaseKeys = sf::Keyboard::Add;
-sf::Keyboard::Key KeyToDecreaseKeys = sf::Keyboard::Dash;
-sf::Keyboard::Key AltKeyToDecreaseKeys = sf::Keyboard::Subtract;
-sf::Keyboard::Key KeyToIncreaseButtons = sf::Keyboard::Period;
-sf::Keyboard::Key KeyToDecreaseButtons = sf::Keyboard::Comma;
-sf::Keyboard::Key KeyToReset = sf::Keyboard::X;
-sf::Keyboard::Key KeyExit = sf::Keyboard::W;
-sf::Keyboard::Key KeyToOpenKPSWindow = sf::Keyboard::K;
-sf::Keyboard::Key KeyToOpenMenuWindow = sf::Keyboard::A;
-sf::Keyboard::Key KeyToOpenGraphWindow = sf::Keyboard::G;
+Hotkey KeyToIncreaseKeys({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::Equal});
+Hotkey AltKeyToIncreaseKeys({sf::Keyboard::Scancode::LAlt, sf::Keyboard::Scancode::Equal});
+Hotkey KeyToDecreaseKeys({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::Hyphen});
+Hotkey AltKeyToDecreaseKeys({sf::Keyboard::Scancode::LAlt, sf::Keyboard::Scancode::Hyphen});
+Hotkey KeyToIncreaseButtons({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::Period});
+Hotkey KeyToDecreaseButtons({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::Comma});
+Hotkey KeyToReset({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::X});
+Hotkey KeyExit({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::W});
+Hotkey KeyToOpenKPSWindow({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::K});
+Hotkey KeyToOpenMenuWindow({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::A});
+Hotkey KeyToOpenGraphWindow({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::G});
 
 // Saved parameters
 float MaxKPS;

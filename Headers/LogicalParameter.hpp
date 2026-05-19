@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <string>
+#include "Hotkey.hpp"
 
 
 struct LogicalParameter
@@ -25,6 +26,7 @@ struct LogicalParameter
             VectorU,
             VectorI,
             VectorF,
+            Hotkey
         };
 
         enum class ID
@@ -592,6 +594,16 @@ struct LogicalParameter
             OtherShowOppOnAlt,
             OtherMultpl,
 
+            HotkeyAddKeys,
+            HotkeyRmKeys,
+            HotkeyAddMouse,
+            HotkeyRmMouse,
+            HotkeyExit,
+            HotkeyReset,
+            HotkeyMenu,
+            HotkeyKPSWindow,
+            HotkeyGraphWindow,
+
             SaveStatMaxKPS,
             SaveStatTotal,
             SaveStatTotal1,
@@ -627,6 +639,7 @@ struct LogicalParameter
             sf::Vector2u *vUp;
             sf::Vector2i *vIp;
             sf::Vector2f *vFp;
+            Hotkey *hP;
         };
 
         LogicalParameter(Type type, void *valPtr, const std::string &parName = "", const std::string &defVal = "", 
@@ -655,6 +668,8 @@ struct LogicalParameter
 
         template <typename T>
         T getVector() const;
+        
+        Hotkey* getHotkey() const;
 
         std::string getValPt(int pt) const;
         void resetToDefaultValue();

@@ -52,7 +52,8 @@ void Button::setTextStrings()
     const auto advMode = isInSupportedRange && Settings::ButtonTextAdvancedMode;
     const auto chSz = !advMode ? Settings::ButtonTextCharacterSize : Settings::ButtonTextAdvCharacterSize[mBtnIdx];
 
-    const auto lAlt = Settings::ShowOppOnAlt && sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt);
+    // SFML 3: Enums are now strongly typed (sf::Keyboard::Key::LAlt)
+    const auto lAlt = Settings::ShowOppOnAlt && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LAlt);
     const auto sepValAdvMode = isInSupportedRange && Settings::ButtonTextSepPosAdvancedMode;
 
     if (Settings::ButtonTextShowVisualKeys) 

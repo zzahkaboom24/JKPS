@@ -6,10 +6,11 @@
 
 #include <iostream>
 #include <stdlib.h>
+#include <optional>
 
 
 KeysPerSecondGraph::KeysPerSecondGraph()
-: mVertecies(sf::TriangleFan, 16)
+: mVertecies(sf::PrimitiveType::TriangleFan, 16)
 , mActiveVertecies(16)
 {
     srand(time(NULL));
@@ -30,17 +31,15 @@ KeysPerSecondGraph::KeysPerSecondGraph()
 
 void KeysPerSecondGraph::handleOwnEvent()
 {
-    auto event = sf::Event();
-    while (mWindow.pollEvent(event))
+    while (const std::optional event = mWindow.pollEvent())
     { 
-        if (event.type == sf::Event::KeyPressed)
+        if (const auto* keyP = event->getIf<sf::Event::KeyPressed>())
         {
-            const auto key = event.key;
-            if (key.control && key.code == Settings::KeyExit)
+            if (Settings::KeyExit.isTriggered(keyP))
                 mWindow.close();
         }
 
-        if (event.type == sf::Event::Closed)
+        if (event->is<sf::Event::Closed>())
         {
             mWindow.close();
         }
@@ -66,8 +65,8 @@ void KeysPerSecondGraph::openWindow()
     if (!mWindow.isOpen())
     {
         sf::ContextSettings settings;
-        settings.antialiasingLevel = 8;
-        mWindow.create(sf::VideoMode(800, 600), "Graph", sf::Style::Close, settings);
+        settings.antiAliasingLevel = 8;
+        mWindow.create(sf::VideoMode({800u, 600u}), "Graph", sf::Style::Close, sf::State::Windowed, settings);
     }
 }
 

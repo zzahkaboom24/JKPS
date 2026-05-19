@@ -7,6 +7,8 @@
 #include "ResourceIdentifiers.hpp"
 #include "LogicalParameter.hpp"
 
+#include <string>
+#include <array>
 
 
 class GfxStatisticsLine : public sf::Drawable, public sf::Transformable
@@ -34,22 +36,21 @@ class GfxStatisticsLine : public sf::Drawable, public sf::Transformable
         const sf::Text &getLineText() const;
         const sf::Text &getValueText() const;
 
-        static std::string *getStatLineString(StatisticsID id);
-        static std::string getStatValueString(StatisticsID id);
-
         static bool parameterIdMatches(LogicalParameter::ID id);
 
-    
+
     private:
         void centerOrigin();
+
+        static std::string *getStatLineString(StatisticsID id);
+        static std::string getStatValueString(StatisticsID id);
 
 
     private:
         const FontHolder &mFonts;
-
         const StatisticsID mIdentifier;
-
         const bool &mShow;
+
         sf::Text mStatLineText;
         sf::Text mStatValueText;
 };

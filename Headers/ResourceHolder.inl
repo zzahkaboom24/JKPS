@@ -1,3 +1,6 @@
+#include <type_traits>
+#include <SFML/Graphics/Font.hpp>
+
 template <typename Resource, typename Identifier>
 bool ResourceHolder<Resource, Identifier>::loadFromFile(Identifier id, const std::string& path)
 {
@@ -5,13 +8,23 @@ bool ResourceHolder<Resource, Identifier>::loadFromFile(Identifier id, const std
         return false;
         
     std::unique_ptr<Resource> resource(new Resource());
-    // if (!resource->loadFromFile(path))
-    //     throw std::runtime_error("ResourceHolder::loadFromFile - Failed to load " + path);
 
-    if (!resource->loadFromFile(path))
+    // SFML 3: Fonts stream, so they use openFromFile instead of loadFromFile
+    if constexpr (std::is_same_v<Resource, sf::Font>)
     {
-        std::cerr << "Failed to load resource - \"" + path + "\"\n";
-        return false;
+        if (!resource->openFromFile(path))
+        {
+            std::cerr << "Failed to load resource - \"" + path + "\"\n";
+            return false;
+        }
+    }
+    else
+    {
+        if (!resource->loadFromFile(path))
+        {
+            std::cerr << "Failed to load resource - \"" + path + "\"\n";
+            return false;
+        }
     }
     
     insertResource(id, std::move(resource));
@@ -24,8 +37,18 @@ void ResourceHolder<Resource, Identifier>::loadFromMemory(Identifier id
                                                 , std::size_t sizeInBytes)
 {
     std::unique_ptr<Resource> resource(new Resource());
-    if (!resource->loadFromMemory(data, sizeInBytes))
-        throw std::runtime_error("ResourceHolder::loadFromMemory - Failed to load default resource");
+    
+    // SFML 3: Fonts stream, so they use openFromMemory
+    if constexpr (std::is_same_v<Resource, sf::Font>)
+    {
+        if (!resource->openFromMemory(data, sizeInBytes))
+            throw std::runtime_error("ResourceHolder::loadFromMemory - Failed to load default resource");
+    }
+    else
+    {
+        if (!resource->loadFromMemory(data, sizeInBytes))
+            throw std::runtime_error("ResourceHolder::loadFromMemory - Failed to load default resource");
+    }
     
     insertResource(id, std::move(resource));
 }

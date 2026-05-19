@@ -15,7 +15,6 @@ namespace sf
     class Event;
 }
 
-
 class GfxButtonSelector
 {
     private:
@@ -33,7 +32,6 @@ class GfxButtonSelector
             Mouse,
         };
 
-
     public:
         GfxButtonSelector();
 
@@ -46,11 +44,10 @@ class GfxButtonSelector
         
         static bool isCharacter(sf::Keyboard::Key key);
 
-
     private:
-        void handleButtonInteractionEvent(sf::Event event);
+        void handleButtonInteractionEvent(const sf::Event& event);
         // Clicks with keyboard to modify value of buttons
-        void handleButtonModificationEvent(sf::Event event);
+        void handleButtonModificationEvent(const sf::Event& event);
 
         void select(GfxParameter *ptr);
         void deselect();
@@ -58,7 +55,6 @@ class GfxButtonSelector
         void setCursorPos();
         void resetVisualKeyGfxButton(const std::string &str1, const std::string &str2);
         
-
     private:
         sf::Vector2u mWindowSize;
         sf::RenderWindow mWindow;

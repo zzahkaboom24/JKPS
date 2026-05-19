@@ -16,6 +16,8 @@ std::string eraseDigitsOverHundredths(const std::string &floatStr);
 
 std::string keyToStr(sf::Keyboard::Key key, bool saveToCfg = false);
 sf::Keyboard::Key strToKey(const std::string &str);
+std::string scancodeToStr(sf::Keyboard::Scancode scancode, bool saveToCfg = false);
+sf::Keyboard::Scancode strToScancode(const std::string &str);
 std::string btnToStr(sf::Mouse::Button button);
 sf::Mouse::Button strToBtn(const std::string &str);
 bool isKey(const std::string &str);

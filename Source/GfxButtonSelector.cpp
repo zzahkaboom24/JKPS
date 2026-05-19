@@ -9,63 +9,64 @@
 #include <cassert>
 #include <stdexcept>
 #include <iostream>
+#include <optional>
+#include <cstdint>
 
-
-sf::RectangleShape GfxButtonSelector::mCursor(sf::Vector2f(1, 21));
+sf::RectangleShape GfxButtonSelector::mCursor(sf::Vector2f({1.f, 21.f}));
 int GfxButtonSelector::mSelectedBtnTextIndex(-1);
 GfxParameter *GfxButtonSelector::mSelectedBtn(nullptr);
 const std::string GfxButtonSelector::mDefaultVisualKeyStr("Visual key");
 const sf::Color GfxButtonSelector::mDefaultVisualKeyColor(sf::Color(160, 160, 160));
 
 GfxButtonSelector::GfxButtonSelector()
-: mWindowSize(300, 200)
+: mWindowSize(300u, 200u)
 , mLogKey(nullptr)
+, mKeyType(Keyboard)
 {
-    if (!mFont.loadFromMemory(RobotoMono, 1100000))
+    if (!mFont.openFromMemory(RobotoMono, 1100000))
         throw std::runtime_error("KeySelector::KeySelector - Failed to load default font");
 
-    auto realKeyGfx = std::make_unique<GfxParameter>(nullptr, "Key", 0, sf::Vector2f(150, 25));
-    realKeyGfx->setPosition(mWindowSize.x / 2, 25);
+    auto realKeyGfx = std::make_unique<GfxParameter>(&mFont, "Key", 0, sf::Vector2f({150.f, 25.f}));
+    realKeyGfx->setPosition({mWindowSize.x / 2.f, 25.f});
     mButtons[RealKeyButton] = std::move(realKeyGfx);
     
-    auto visualKeyGfx = std::make_unique<GfxParameter>(nullptr, "Visual key", 0, sf::Vector2f(250, 25));
-    visualKeyGfx->setPosition(mWindowSize.x / 2, 75);
+    auto visualKeyGfx = std::make_unique<GfxParameter>(&mFont, "Visual key", 0, sf::Vector2f({250.f, 25.f}));
+    visualKeyGfx->setPosition({mWindowSize.x / 2.f, 75.f});
     // Make the text gray in order to show that it is a hint, not an actual text
-    visualKeyGfx->mValText.setFillColor(mDefaultVisualKeyColor);
+    visualKeyGfx->mValText->setFillColor(mDefaultVisualKeyColor);
     mButtons[VisualKeyButton] = std::move(visualKeyGfx);
 
-    auto acceptButton = std::make_unique<GfxParameter>(nullptr, "True");
-    acceptButton->setPosition(mWindowSize.x / 2, 125);
+    auto acceptButton = std::make_unique<GfxParameter>(nullptr, true);
+    acceptButton->setPosition({mWindowSize.x / 2.f, 125.f});
     mButtons[AcceptButton] = std::move(acceptButton);
 
-    mCursor.setOutlineThickness(1);
+    mCursor.setOutlineThickness(1.f);
     mCursor.setFillColor(sf::Color::White);
     mCursor.setOutlineColor(sf::Color::Black);
     mCursor.setOrigin(mCursor.getSize() / 2.f);
     // set visual key button height since it is the only one gfx button where the cursor is needed
-    mCursor.setPosition(0, mButtons[VisualKeyButton]->getPosition().y); 
+    mCursor.setPosition({0.f, mButtons[VisualKeyButton]->getPosition().y}); 
 }
 
 void GfxButtonSelector::handleOwnInput()
 {
-    auto event = sf::Event();
-    while (mWindow.pollEvent(event))
+    while (const std::optional<sf::Event> optEvent = mWindow.pollEvent())
     {
+        const sf::Event &event = *optEvent;
         auto handleExit = [this] ()
             {
                 deselect();
                 mWindow.close();
             };
-        if (event.type == sf::Event::KeyPressed)
+        if (const auto* kp = event.getIf<sf::Event::KeyPressed>())
         {
-            const auto key = event.key;
-            if (key.control && key.code == Settings::KeyExit)
+            if (Settings::KeyExit.isTriggered(kp))
             {
                 handleExit();
             }
         }
 
-        if (event.type == sf::Event::Closed)
+        if (event.is<sf::Event::Closed>())
             handleExit();
 
         handleButtonModificationEvent(event);
@@ -73,29 +74,27 @@ void GfxButtonSelector::handleOwnInput()
     }
 }
 
-void GfxButtonSelector::handleButtonModificationEvent(sf::Event event)
+void GfxButtonSelector::handleButtonModificationEvent(const sf::Event& event)
 {
-    if (event.type == sf::Event::KeyPressed)
+    if (const auto* kp = event.getIf<sf::Event::KeyPressed>())
     {    
         if (!mSelectedBtn || (mSelectedBtn == mButtons[RealKeyButton].get() 
         &&  mKeyType == Mouse))
             return;
 
-        auto str = static_cast<std::string>(mSelectedBtn->mValText.getString());
-
-        const auto key = event.key;
+        auto str = static_cast<std::string>(mSelectedBtn->mValText->getString());
 
         if (mSelectedBtn == mButtons[RealKeyButton].get())
         {
-            const auto visualKeyChanged = mButtons[VisualKeyButton]->mValText.getString() != 
-                keyToStr(strToKey(std::string(mButtons[RealKeyButton]->mValText.getString())));
+            const auto visualKeyChanged = mButtons[VisualKeyButton]->mValText->getString() != 
+                scancodeToStr(strToScancode(std::string(mButtons[RealKeyButton]->mValText->getString())));
 
-            mButtons[RealKeyButton]->mValText.setString(key.code != sf::Keyboard::Unknown ? keyToStr(key.code, true) : "Unknown");
+            mButtons[RealKeyButton]->mValText->setString(kp->scancode != sf::Keyboard::Scancode::Unknown ? scancodeToStr(kp->scancode, true) : "Unknown");
             mButtons[RealKeyButton]->setupValPos();
 
             if (!visualKeyChanged)
             {
-                mButtons[VisualKeyButton]->mValText.setString(key.code != sf::Keyboard::Unknown ? keyToStr(key.code) : "Unknown");
+                mButtons[VisualKeyButton]->mValText->setString(kp->scancode != sf::Keyboard::Scancode::Unknown ? scancodeToStr(kp->scancode) : "Unknown");
                 mButtons[VisualKeyButton]->setupValPos();
             }
             deselect();
@@ -103,7 +102,7 @@ void GfxButtonSelector::handleButtonModificationEvent(sf::Event event)
         }
 
         auto strChanged = false;
-        if (key.code == sf::Keyboard::Backspace)
+        if (kp->code == sf::Keyboard::Key::Backspace)
         {
             if (mSelectedBtnTextIndex != 0)
             {
@@ -112,38 +111,38 @@ void GfxButtonSelector::handleButtonModificationEvent(sf::Event event)
             }
             strChanged = true;
         }
-        else if (key.code == sf::Keyboard::Delete)
+        else if (kp->code == sf::Keyboard::Key::Delete)
         {
-            if (str.size() > mSelectedBtnTextIndex)
+            if (str.size() > static_cast<size_t>(mSelectedBtnTextIndex))
                 rmChOnIdx(str, mSelectedBtnTextIndex);
             strChanged = true;
         }
-        else if (key.code == sf::Keyboard::Left)
+        else if (kp->code == sf::Keyboard::Key::Left)
         {
             if (mSelectedBtnTextIndex > 0)
                 --mSelectedBtnTextIndex;
         }
-        else if (key.code == sf::Keyboard::Right)
+        else if (kp->code == sf::Keyboard::Key::Right)
         {
-            if (str.size() > mSelectedBtnTextIndex)
+            if (str.size() > static_cast<size_t>(mSelectedBtnTextIndex))
                 ++mSelectedBtnTextIndex;
         }
-		else if (key.code == sf::Keyboard::Home)
+		else if (kp->code == sf::Keyboard::Key::Home)
 		{
 			mSelectedBtnTextIndex = 0;
 		}
-        else if (key.code == sf::Keyboard::End)
+        else if (kp->code == sf::Keyboard::Key::End)
         {
-            mSelectedBtnTextIndex = str.size();
+            mSelectedBtnTextIndex = static_cast<int>(str.size());
         }
      
-        if (isCharacter(key.code))
+        if (isCharacter(kp->code))
         {
             const auto maxLength = 20ul;
-            if (mButtons[VisualKeyButton]->mValText.getString().getSize() >= maxLength)
+            if (mButtons[VisualKeyButton]->mValText->getString().getSize() >= maxLength)
                 return;
 
-            if (key.control && key.code == sf::Keyboard::V)
+            if (kp->control && kp->code == sf::Keyboard::Key::V)
             {
                 const auto clipboardStr = std::string(sf::Clipboard::getString());
                 const auto lhs = std::string(str.begin(), str.begin() + mSelectedBtnTextIndex);
@@ -159,40 +158,40 @@ void GfxButtonSelector::handleButtonModificationEvent(sf::Event event)
             }
             else
             {
-                addChOnIdx(str, mSelectedBtnTextIndex, enumKeyToStr(key.code));
+                addChOnIdx(str, mSelectedBtnTextIndex, enumKeyToStr(kp->code));
                 ++mSelectedBtnTextIndex;
                 strChanged = true;
             }
         }
 
         // If user starts to write anything, then change text color and delete the hint
-        if (mButtons[VisualKeyButton]->mValText.getFillColor() == mDefaultVisualKeyColor && strChanged)
+        if (mButtons[VisualKeyButton]->mValText->getFillColor() == mDefaultVisualKeyColor && strChanged)
         {
-            mButtons[VisualKeyButton]->mValText.setFillColor(sf::Color::White);
-            mSelectedBtn->mValText.setString("");
+            mButtons[VisualKeyButton]->mValText->setFillColor(sf::Color::White);
+            mSelectedBtn->mValText->setString("");
             str = "";
-            if (isCharacter(key.code))
-                str += enumKeyToStr(key.code);
-            mSelectedBtnTextIndex = str.size();
+            if (isCharacter(kp->code))
+                str += enumKeyToStr(kp->code);
+            mSelectedBtnTextIndex = static_cast<int>(str.size());
         }
-        mSelectedBtn->mValText.setString(str);
+        mSelectedBtn->mValText->setString(str);
         mSelectedBtn->setupValPos();
         setCursorPos();
     }
 
-    if (event.type == sf::Event::MouseButtonPressed)
+    if (const auto* mbp = event.getIf<sf::Event::MouseButtonPressed>())
     {
-        const auto button = event.mouseButton.button;
+        const auto button = mbp->button;
         if (mSelectedBtn == mButtons[RealKeyButton].get() && mKeyType == Mouse)
         {
-            const auto visualKeyChanged = mButtons[VisualKeyButton]->mValText.getString() != mButtons[RealKeyButton]->mValText.getString();
+            const auto visualKeyChanged = mButtons[VisualKeyButton]->mValText->getString() != mButtons[RealKeyButton]->mValText->getString();
 
-            mButtons[RealKeyButton]->mValText.setString(btnToStr(button));
+            mButtons[RealKeyButton]->mValText->setString(btnToStr(button));
             mButtons[RealKeyButton]->setupValPos();
 
             if (!visualKeyChanged)
             {
-                mButtons[VisualKeyButton]->mValText.setString(mButtons[RealKeyButton]->mValText.getString());
+                mButtons[VisualKeyButton]->mValText->setString(mButtons[RealKeyButton]->mValText->getString());
                 mButtons[VisualKeyButton]->setupValPos();
             }
             deselect();
@@ -201,21 +200,21 @@ void GfxButtonSelector::handleButtonModificationEvent(sf::Event event)
     }
 }
 
-void GfxButtonSelector::handleButtonInteractionEvent(sf::Event event)
+void GfxButtonSelector::handleButtonInteractionEvent(const sf::Event& event)
 {
-    if (event.type == sf::Event::MouseButtonPressed)
+    if (const auto* mbp = event.getIf<sf::Event::MouseButtonPressed>())
     {
-        const auto button = event.mouseButton.button;
+        const auto button = mbp->button;
         for (auto &elem : mButtons)
         {
             const auto mousePos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(mWindow));
 
-            if (button == sf::Mouse::Left && elem->contains(mousePos))
+            if (button == sf::Mouse::Button::Left && elem->contains(mousePos))
             {
                 if (elem == mButtons[VisualKeyButton] 
-                &&  mButtons[VisualKeyButton]->mValText.getFillColor() == mDefaultVisualKeyColor)
+                &&  mButtons[VisualKeyButton]->mValText->getFillColor() == mDefaultVisualKeyColor)
                 {
-                    mButtons[VisualKeyButton]->mValText.setString("");
+                    mButtons[VisualKeyButton]->mValText->setString("");
                 }
                 if (elem == mButtons[AcceptButton])
                 {
@@ -226,21 +225,21 @@ void GfxButtonSelector::handleButtonInteractionEvent(sf::Event event)
                 deselect();
                 select(elem.get());
             } 
-            else if ((button == sf::Mouse::Left || button == sf::Mouse::Right) 
+            else if ((button == sf::Mouse::Button::Left || button == sf::Mouse::Button::Right) 
             && elem.get() == mSelectedBtn)
             {
                 deselect();
             }
         }
     }
-    if (event.type == sf::Event::KeyPressed)
+    if (const auto* kp = event.getIf<sf::Event::KeyPressed>())
     {
-        const auto key = event.key.code;
-        if (key == sf::Keyboard::Escape)
+        const auto key = kp->code;
+        if (key == sf::Keyboard::Key::Escape)
         {
             deselect();
         }
-        if (mSelectedBtn != mButtons[RealKeyButton].get() && key == sf::Keyboard::Enter)
+        if (mSelectedBtn != mButtons[RealKeyButton].get() && key == sf::Keyboard::Key::Enter)
         {
             saveKey();
             mWindow.close();
@@ -256,7 +255,7 @@ void GfxButtonSelector::render()
     for (const auto &elem : mButtons)
         mWindow.draw(*elem);
     if (mSelectedBtnTextIndex != -1 && mSelectedBtn != mButtons[RealKeyButton].get()
-    &&  mButtons[VisualKeyButton]->mValText.getFillColor() != mDefaultVisualKeyColor)
+    &&  mButtons[VisualKeyButton]->mValText->getFillColor() != mDefaultVisualKeyColor)
         mWindow.draw(mCursor);
 
     mWindow.display();
@@ -269,8 +268,8 @@ void GfxButtonSelector::setKey(LogKey *logKey)
     mLogKey = logKey;
     mKeyType = mLogKey->keyboardKey ? Keyboard : Mouse;
 
-    mButtons[RealKeyButton]->mValText.setString(mLogKey->realStr);
-    mButtons[VisualKeyButton]->mValText.setString(mLogKey->visualStr);
+    mButtons[RealKeyButton]->mValText->setString(mLogKey->realStr);
+    mButtons[VisualKeyButton]->mValText->setString(mLogKey->visualStr);
     resetVisualKeyGfxButton(mLogKey->realStr, mLogKey->visualStr);
 
     mButtons[RealKeyButton]->setupValPos();
@@ -284,7 +283,7 @@ void GfxButtonSelector::openWindow()
     {
         const auto title = std::string(mKeyType == Keyboard ? "Keyboard key selector" : "Mouse button selector");
 
-        sf::Uint32 style;
+        std::uint32_t style;
 #ifdef _WIN32
         style = sf::Style::Close;
 #elif linux
@@ -293,7 +292,7 @@ void GfxButtonSelector::openWindow()
 #error Unsupported compiler
 #endif
 
-        mWindow.create(sf::VideoMode(300u, 150u), title, style);
+        mWindow.create(sf::VideoMode({300u, 150u}), title, style);
         mWindow.requestFocus();
     }
 }
@@ -308,7 +307,7 @@ void GfxButtonSelector::select(GfxParameter *ptr)
     mSelectedBtn = ptr;
     // Make the text gray in order to show that it is a hint, not an actual text
     mSelectedBtn->mRect.setFillColor(GfxParameter::defaultSelectedRectColor);
-    mSelectedBtnTextIndex = mSelectedBtn->mValText.getString().getSize();
+    mSelectedBtnTextIndex = static_cast<int>(mSelectedBtn->mValText->getString().getSize());
     setCursorPos();
 }
 
@@ -318,7 +317,7 @@ void GfxButtonSelector::deselect()
         return;
 
     if (mSelectedBtn == mButtons[VisualKeyButton].get() 
-    && mButtons[VisualKeyButton]->mValText.getString() == "")
+    && mButtons[VisualKeyButton]->mValText->getString() == "")
     {
         resetVisualKeyGfxButton("", "");
     }
@@ -330,13 +329,13 @@ void GfxButtonSelector::deselect()
 
 void GfxButtonSelector::saveKey()
 {
-    mLogKey->realStr = mButtons[RealKeyButton]->mValText.getString();
-    mLogKey->visualStr = mButtons[VisualKeyButton]->mValText.getString();
+    mLogKey->realStr = mButtons[RealKeyButton]->mValText->getString();
+    mLogKey->visualStr = mButtons[VisualKeyButton]->mValText->getString();
 
     switch(mKeyType)
     {
         case Keyboard:
-            *mLogKey->keyboardKey = strToKey(mLogKey->realStr);
+            *mLogKey->keyboardKey = strToScancode(mLogKey->realStr);
             break;
         case Mouse:
             *mLogKey->mouseButton = strToBtn(mLogKey->realStr);
@@ -353,26 +352,26 @@ void GfxButtonSelector::setCursorPos()
     if (!mSelectedBtn)
         return;
 
-    static auto text = sf::Text();
+    static std::optional<sf::Text> textOpt;
     static auto chSz = sf::Vector2f();
-    if (text.getFont() == nullptr)
+    if (!textOpt)
     {
-        text.setFont(mFont);
-        text.setString("0");
-        chSz.x = text.getLocalBounds().width;
-        chSz.y = text.getLocalBounds().height;
+        textOpt.emplace(mFont);
+        textOpt->setString("0");
+        chSz.x = textOpt->getLocalBounds().size.x;
+        chSz.y = textOpt->getLocalBounds().size.y;
     }
 
     // Take absolute position of the center of the button, substract by half width - the cursor is on the left bound,
     // then find the width of the part on the text left, and add it - the cursor is on the text left,
     // then take space in X axes for each character, substract it by 2 times spacing between them, 
     // and multiply by current cursor index - the cursor is on the index left
-    auto x = static_cast<float>(mSelectedBtn->getPosition().x - mSelectedBtn->mRect.getSize().x / 2 + 
-        (mSelectedBtn->mRect.getSize().x - mSelectedBtn->mValText.getLocalBounds().width) / 2 +
-        mSelectedBtnTextIndex * (chSz.x - text.getLetterSpacing() * 2));
+    auto x = static_cast<float>(mSelectedBtn->getPosition().x - mSelectedBtn->mRect.getSize().x / 2.f + 
+        (mSelectedBtn->mRect.getSize().x - mSelectedBtn->mValText->getLocalBounds().size.x) / 2.f +
+        mSelectedBtnTextIndex * (chSz.x - textOpt->getLetterSpacing() * 2.f));
     auto y = static_cast<float>(mCursor.getPosition().y);
 
-    mCursor.setPosition(x, y);
+    mCursor.setPosition({x, y});
 }
 
 void GfxButtonSelector::resetVisualKeyGfxButton(const std::string &str1, const std::string &str2)
@@ -383,25 +382,25 @@ void GfxButtonSelector::resetVisualKeyGfxButton(const std::string &str1, const s
         switch(mKeyType)
         {
             case Keyboard: 
-                strToStr = keyToStr(strToKey(std::string(mButtons[RealKeyButton]->mValText.getString()))); 
+                strToStr = scancodeToStr(strToScancode(std::string(mButtons[RealKeyButton]->mValText->getString()))); 
                 break;
 
             case Mouse: 
-                strToStr = mButtons[RealKeyButton]->mValText.getString(); 
+                strToStr = mButtons[RealKeyButton]->mValText->getString(); 
                 break;
         }
             
-        mButtons[VisualKeyButton]->mValText.setString(strToStr);
+        mButtons[VisualKeyButton]->mValText->setString(strToStr);
     }
-    mButtons[VisualKeyButton]->mValText.setFillColor(mDefaultVisualKeyColor);
+    mButtons[VisualKeyButton]->mValText->setFillColor(mDefaultVisualKeyColor);
     mButtons[VisualKeyButton]->setupValPos();
 }
 
 bool GfxButtonSelector::isCharacter(sf::Keyboard::Key key)
 {
     return 
-        (key >= sf::Keyboard::A         && key <= sf::Keyboard::Num9)
-    ||  (key >= sf::Keyboard::LBracket  && key <= sf::Keyboard::Space)
-    ||  (key >= sf::Keyboard::Add       && key <= sf::Keyboard::Divide)
-    ||  (key >= sf::Keyboard::Numpad0   && key <= sf::Keyboard::Numpad9);
+        (key >= sf::Keyboard::Key::A         && key <= sf::Keyboard::Key::Num9)
+    ||  (key >= sf::Keyboard::Key::LBracket  && key <= sf::Keyboard::Key::Space)
+    ||  (key >= sf::Keyboard::Key::Add       && key <= sf::Keyboard::Key::Divide)
+    ||  (key >= sf::Keyboard::Key::Numpad0   && key <= sf::Keyboard::Key::Numpad9);
 }

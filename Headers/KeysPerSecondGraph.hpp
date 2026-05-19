@@ -2,32 +2,33 @@
 
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
+#include <SFML/Graphics/PrimitiveType.hpp>
 
 #include "LogicalParameter.hpp"
 
 #include <array>
 
-
 class KeysPerSecondGraph
 {
-    public:
-        KeysPerSecondGraph();
+public:
+    KeysPerSecondGraph();
 
-        void handleOwnEvent();
-        void update();
-        void render();
+    void handleOwnEvent();
+    void update();
+    void render();
 
-        void openWindow();
-        void closeWindow();
-        bool isOpen() const;
+    void openWindow();
+    void closeWindow();
+    bool isOpen() const;
 
-        void updateParameters();
-        static bool parameterIdMatches(LogicalParameter::ID id);
+    void updateParameters();
+    static bool parameterIdMatches(LogicalParameter::ID id);
 
+private:
+    sf::RenderWindow mWindow;
 
-    private:
-        sf::RenderWindow mWindow;
+    // SFML 3 fix
+    sf::VertexArray mVertecies{sf::PrimitiveType::TriangleFan};
 
-        sf::VertexArray mVertecies;
-        unsigned mActiveVertecies;
+    unsigned mActiveVertecies{};
 };

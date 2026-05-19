@@ -3,6 +3,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Graphics/Color.hpp>
+#include "Hotkey.hpp"
 
 #include "GfxStatisticsLine.hpp"
 
@@ -174,17 +175,17 @@ namespace Settings
     extern unsigned char* KeyPressVisTexture;
 
     // Hot keys
-    extern sf::Keyboard::Key KeyToIncreaseKeys;
-    extern sf::Keyboard::Key AltKeyToIncreaseKeys;
-    extern sf::Keyboard::Key KeyToDecreaseKeys;
-    extern sf::Keyboard::Key AltKeyToDecreaseKeys;
-    extern sf::Keyboard::Key KeyToIncreaseButtons;
-    extern sf::Keyboard::Key KeyToDecreaseButtons;
-    extern sf::Keyboard::Key KeyToReset;
-    extern sf::Keyboard::Key KeyExit;
-    extern sf::Keyboard::Key KeyToOpenKPSWindow;
-    extern sf::Keyboard::Key KeyToOpenMenuWindow;
-    extern sf::Keyboard::Key KeyToOpenGraphWindow;
+    extern Hotkey KeyToIncreaseKeys;
+    extern Hotkey AltKeyToIncreaseKeys;
+    extern Hotkey KeyToDecreaseKeys;
+    extern Hotkey AltKeyToDecreaseKeys;
+    extern Hotkey KeyToIncreaseButtons;
+    extern Hotkey KeyToDecreaseButtons;
+    extern Hotkey KeyToReset;
+    extern Hotkey KeyExit;
+    extern Hotkey KeyToOpenKPSWindow;
+    extern Hotkey KeyToOpenMenuWindow;
+    extern Hotkey KeyToOpenGraphWindow;
 
     // Saved parameters
     extern float MaxKPS;

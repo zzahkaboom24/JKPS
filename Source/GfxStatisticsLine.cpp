@@ -8,11 +8,15 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 
+#include <cstdint>
+
 
 GfxStatisticsLine::GfxStatisticsLine(const FontHolder& fontHolder, const bool &show, const StatisticsID identifier)
 : mFonts(fontHolder)
 , mIdentifier(identifier)
 , mShow(show)
+, mStatLineText(fontHolder.get(Fonts::Statistics))
+, mStatValueText(fontHolder.get(Fonts::Statistics))
 {
     updateAsset();
     mStatLineText.setString(*getStatLineString(mIdentifier));
@@ -26,13 +30,13 @@ void GfxStatisticsLine::draw(sf::RenderTarget &target, sf::RenderStates states) 
     if (!mShow || !Settings::ShowStatisticsText)
         return;
 
-    states.transform.combine(getTransform());
+    states.transform *= getTransform();
 
     target.draw(mStatLineText, states);
 
     // Draw values in front of text string
     const auto rect = mStatLineText.getLocalBounds();
-    states.transform.translate(rect.left + rect.width, 0.f);
+    states.transform.translate({rect.position.x + rect.size.x, 0.f});
 
     target.draw(mStatValueText, states);
 }
@@ -79,7 +83,9 @@ void GfxStatisticsLine::updateParameters()
     const auto italic = !advMode ? Settings::StatisticsTextItalic 
         : Settings::StatisticsTextAdvItalic[mIdentifier];
 
-    const auto style = sf::Uint32(bold ? sf::Text::Bold : 0) | (italic ? sf::Text::Italic : 0);
+    std::uint32_t style = static_cast<std::uint32_t>(sf::Text::Style::Regular);
+    if (bold) style |= static_cast<std::uint32_t>(sf::Text::Style::Bold);
+    if (italic) style |= static_cast<std::uint32_t>(sf::Text::Style::Italic);
 
     mStatLineText.setFillColor(color);
     mStatValueText.setFillColor(color);
@@ -128,14 +134,14 @@ void GfxStatisticsLine::centerOrigin()
     const auto lineRect = mStatLineText.getLocalBounds();
     const auto valueRect = mStatValueText.getLocalBounds();
 
-    mStatLineText.setOrigin(lineRect.left, lineRect.top);
+    mStatLineText.setOrigin({lineRect.position.x, lineRect.position.y});
 
     // Origin center
     if (centerOrigin)
     {
         const auto valueOrigin = sf::Vector2f(
-            valueRect.left + valueRect.width / 2.f, 
-            lineRect.top
+            valueRect.position.x + valueRect.size.x / 2.f, 
+            lineRect.position.y
         );
 
         mStatValueText.setOrigin(valueOrigin);
@@ -143,7 +149,7 @@ void GfxStatisticsLine::centerOrigin()
     // Origin left
     else
     {
-        mStatValueText.setOrigin(valueRect.left, valueRect.top);
+        mStatValueText.setOrigin({valueRect.position.x, valueRect.position.y});
     }
 }
 

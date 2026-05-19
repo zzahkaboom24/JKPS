@@ -70,7 +70,7 @@ class Menu
         void updateSaveStatsStrings();
 
     public:
-        class KeyBlock : public sf::Drawable, public sf::Transformable, private sf::NonCopyable
+        class KeyBlock : public sf::Drawable, public sf::Transformable
         {
             public:
                 using Ptr = std::unique_ptr<GfxParameter>;
@@ -79,6 +79,9 @@ class Menu
 
             public:
                 KeyBlock(ParameterLinesContainer &parameterLines, ParameterLine::ID placeHolder, size_t parametersNumber);
+
+                KeyBlock(const KeyBlock&) = delete;
+                KeyBlock& operator=(const KeyBlock&) = delete;
 
                 GfxParameter &current();
                 void push(Ptr ptr);

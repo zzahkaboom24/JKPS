@@ -16,30 +16,32 @@ const TextureHolder *GfxParameter::mTextures = nullptr;
 const FontHolder *GfxParameter::mFonts = nullptr;
 
 // All types, except Bool
-GfxParameter::GfxParameter(const ParameterLine *parent, const std::string &str, unsigned n, sf::Vector2f rectSize)
-: mParent(parent)
+GfxParameter::GfxParameter(const sf::Font *font, const std::string &str, unsigned n, sf::Vector2f rectSize)
+: mParent(nullptr)
 {
-    assert(mTextures && mFonts);
+    assert(font);
 
     mRect.setSize(rectSize);
     mRect.setOrigin(mRect.getSize() / 2.f);
     mRect.setFillColor(defaultRectColor);
 
-    mValText.setFont(mFonts->get(Fonts::Value));
-    mValText.setString(str);
+    mValText.emplace(*font);
+    mValText->setString(str);
     setupValPos();
 
-    float distance = 80;
-    setPosition(distance * static_cast<float>(n), 0);
+    float distance = 80.f;
+    setPosition({distance * static_cast<float>(n), 0.f});
 }
 
 // Bool type
 GfxParameter::GfxParameter(const ParameterLine *parent, bool b)
 : mParent(parent)
 {
-    mValText.setString(b ? "True" : "False");
+    assert(mFonts);
+    mValText.emplace(mFonts->get(Fonts::Value));
+    mValText->setString(b ? "True" : "False");
     setRightTexture();
-    mSprite.setOrigin(static_cast<sf::Vector2f>(mSprite.getTexture()->getSize()) / 2.f);
+    mSprite->setOrigin(static_cast<sf::Vector2f>(mSprite->getTexture().getSize()) / 2.f);
 }
 
 // Tab
@@ -50,21 +52,23 @@ GfxParameter::GfxParameter(const std::string &str, sf::Vector2f rectSize)
     mRect.setOrigin(rectSize / 2.f);
     mRect.setFillColor(defaultRectColor);
 
-    mValText.setFont(mFonts->get(Fonts::Value));
-    mValText.setString(str);
-    mValText.setCharacterSize(15);
+    assert(mFonts);
+    mValText.emplace(mFonts->get(Fonts::Value));
+    mValText->setString(str);
+    mValText->setCharacterSize(15);
 
-    auto rect = mValText.getLocalBounds();
-    mValText.setOrigin(
-        rect.left + rect.width / 2,
-        rect.top  + rect.height / 2);
+    auto rect = mValText->getLocalBounds();
+    mValText->setOrigin({
+        rect.position.x + rect.size.x / 2.f,
+        rect.position.y + rect.size.y / 2.f});
 }
 
 GfxParameter::GfxParameter(const ParameterLine *parent)
 : mParent(parent)
 {
-    mSprite.setTexture(mTextures->get(Textures::Refresh));
-    mSprite.setOrigin(static_cast<sf::Vector2f>(mSprite.getTexture()->getSize()) / 2.f);
+    assert(mTextures);
+    mSprite.emplace(mTextures->get(Textures::Refresh));
+    mSprite->setOrigin(static_cast<sf::Vector2f>(mSprite->getTexture().getSize()) / 2.f);
 }
 
 void GfxParameter::draw(sf::RenderTarget &target, sf::RenderStates states) const
@@ -74,20 +78,22 @@ void GfxParameter::draw(sf::RenderTarget &target, sf::RenderStates states) const
     if (mRect.getSize().x != 0)
     {
         target.draw(mRect, states);
-        target.draw(mValText, states);
+        if (mValText)
+            target.draw(*mValText, states);
     }
-    else
+    else if (mSprite)
     {
-        target.draw(mSprite, states);
+        target.draw(*mSprite, states);
     }
 }
 
 void GfxParameter::setupValPos()
 {
-    mValText.setCharacterSize(20);
-    mValText.setOrigin(
-        mValText.getLocalBounds().left + mValText.getLocalBounds().width  / 2,
-        mValText.getLocalBounds().top  + mValText.getLocalBounds().height / 2);
+    if (!mValText) return;
+    mValText->setCharacterSize(20);
+    mValText->setOrigin({
+        mValText->getLocalBounds().position.x + mValText->getLocalBounds().size.x  / 2.f,
+        mValText->getLocalBounds().position.y  + mValText->getLocalBounds().size.y / 2.f});
 }
 
 
@@ -104,14 +110,14 @@ bool GfxParameter::contains(sf::Vector2f v2) const
 
 sf::FloatRect GfxParameter::getGlobalBounds() const
 {
-    const sf::Vector2f size(mValText.getFont() ? 
-        mRect.getSize() : sf::Vector2f(mSprite.getTexture()->getSize()));
+    const sf::Vector2f size(mRect.getSize().x != 0.f ? 
+        mRect.getSize() : sf::Vector2f(mSprite->getTexture().getSize()));
     return { getGlobalPosition() - size / 2.f, size };
 }
 
 sf::Vector2f GfxParameter::getGlobalPosition() const
 {
-    return getPosition() + (mParent ? mParent->getPosition() : sf::Vector2f(0,0));
+    return getPosition() + (mParent ? mParent->getPosition() : sf::Vector2f({0.f,0.f}));
 }
 
 void GfxParameter::setInverseMark()
@@ -122,9 +128,10 @@ void GfxParameter::setInverseMark()
 void GfxParameter::setRightTexture()
 {
     assert(mTextures);
-    std::string str = static_cast<std::string>(mValText.getString());
+    if (!mValText) return;
+    std::string str = static_cast<std::string>(mValText->getString());
     if (str == "True" || str == "true" || str == "TRUE")
-        mSprite.setTexture(mTextures->get(Textures::vMark));
+        mSprite.emplace(mTextures->get(Textures::vMark));
     else
-        mSprite.setTexture(mTextures->get(Textures::xMark));
+        mSprite.emplace(mTextures->get(Textures::xMark));
 }

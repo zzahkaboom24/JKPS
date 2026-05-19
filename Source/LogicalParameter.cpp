@@ -14,7 +14,7 @@ LogicalParameter::LogicalParameter(Type type, void *valPtr, const std::string &p
 , mChanged(false)
 , mDefValStr(defVal)
 { 
-    if (type != Type::Bool && type != Type::String && type != Type::StringPath)
+    if (type != Type::Bool && type != Type::String && type != Type::StringPath && type != Type::Hotkey)
     {
         if (defVal.find(' ') != std::string::npos)
         {
@@ -76,6 +76,12 @@ LogicalParameter::LogicalParameter(Type type, void *valPtr, const std::string &p
         case Type::VectorF: 
             mVal.vFp = static_cast<sf::Vector2f*>(valPtr); 
             setVector(ConfigHelper::readVectorParameter(*this, defVal));
+            break;
+
+        case Type::Hotkey:
+            mVal.hP = static_cast<Hotkey*>(valPtr);
+            mVal.hP->fromString(defVal);
+            mValStr = mVal.hP->toString();
             break;
 
         default: break; // Empty or Collection
@@ -203,6 +209,12 @@ sf::Color LogicalParameter::getColor() const
     return *mVal.cP;
 }
 
+Hotkey* LogicalParameter::getHotkey() const
+{
+    assert(mType == Type::Hotkey);
+    return mVal.hP;
+}
+
 std::string LogicalParameter::getValPt(int pt) const
 {
     assert(mType == Type::Color || mType == Type::VectorU 
@@ -233,6 +245,11 @@ void LogicalParameter::setValStr(const std::string &str, unsigned idx)
         case LogicalParameter::Type::Bool: setBool(str); break;
         case LogicalParameter::Type::String:
         case LogicalParameter::Type::StringPath: setString(str); break;
+        case LogicalParameter::Type::Hotkey: 
+            mVal.hP->fromString(str); 
+            mValStr = mVal.hP->toString(); 
+            mChanged = true; 
+            break;
         case LogicalParameter::Type::Color: setColor(str, idx); break;
         case LogicalParameter::Type::VectorU:
         case LogicalParameter::Type::VectorI:
@@ -302,6 +319,12 @@ void LogicalParameter::resetToDefaultValue()
 
         case Type::VectorF: 
             setVector(ConfigHelper::readVectorParameter(*this, mDefValStr)); 
+            break;
+
+        case Type::Hotkey:
+            mVal.hP->fromString(mDefValStr);
+            mValStr = mVal.hP->toString();
+            mChanged = true;
             break;
 
         default: break; // Empty or Collection

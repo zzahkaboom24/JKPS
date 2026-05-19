@@ -6,35 +6,43 @@
 
 #include <SFML/Window/Event.hpp>
 
+#include <optional>
+#include <cstdint>
 
 static unsigned maxLen = 4U;
 
-KPSWindow::KPSWindow(const FontHolder &fonts)
+KPSWindow::KPSWindow(const FontHolder& fonts)
 : mFonts(fonts)
+, mKPSText(fonts.get(Fonts::KPSText))
+, mKPSNumber(fonts.get(Fonts::KPSNumber))
 {
     updateAssets();
     updateParameters();
 
     mKPSText.setString("KPS");
     mKPSNumber.setString("0");
+
     if (Settings::KPSWindowEnabledFromStart)
         openWindow();
 }
 
 void KPSWindow::handleOwnEvent()
 {
-    auto event = sf::Event();
-    while (mWindow.pollEvent(event))
-    { 
-        if (event.type == sf::Event::KeyPressed)
+    while (const std::optional event = mWindow.pollEvent())
+    {
+        if (event->is<sf::Event::Closed>())
         {
-            const auto key = event.key;
-            if (key.control && key.code == Settings::KeyExit)
-                mWindow.close();
+            mWindow.close();
         }
 
-        if (event.type == sf::Event::Closed)
-            mWindow.close();
+        if (const auto* keyPressed =
+                event->getIf<sf::Event::KeyPressed>())
+        {
+            if (Settings::KeyExit.isTriggered(keyPressed))
+            {
+                mWindow.close();
+            }
+        }
     }
 }
 
@@ -42,16 +50,23 @@ void KPSWindow::update()
 {
     if (mWindow.isOpen())
     {
-        auto str = std::string();
+        std::string str;
+
         const auto kps = Button::getKeysPerSecond();
+
         if (false)
             str = eraseDigitsOverHundredths(std::to_string(kps));
         else
             str = std::to_string(static_cast<unsigned>(kps));
+
         mKPSNumber.setString(str);
 
-        mKPSNumber.setOrigin((mKPSNumber.getLocalBounds().left + 
-            mKPSNumber.getLocalBounds().width) / 2.f, mKPSNumber.getLocalBounds().top);
+        const auto bounds = mKPSNumber.getLocalBounds();
+
+        mKPSNumber.setOrigin({
+            (bounds.position.x + bounds.size.x) / 2.f,
+            bounds.position.y
+        });
     }
 }
 
@@ -60,18 +75,31 @@ void KPSWindow::render()
     if (mWindow.isOpen())
     {
         auto textTransform = sf::Transform::Identity;
-        auto numberTranform = sf::Transform::Identity;
+        auto numberTransform = sf::Transform::Identity;
 
-        textTransform.translate((mWindow.getSize().x - mKPSText.getLocalBounds().width + 
-            mKPSText.getLocalBounds().left) / 2.f, Settings::KPSWindowTopPadding);
+        const auto textBounds = mKPSText.getLocalBounds();
+        const auto numberBounds = mKPSNumber.getLocalBounds();
 
-        numberTranform.translate(mWindow.getSize().x / 2.f - mKPSNumber.getLocalBounds().left, 
-            mKPSText.getLocalBounds().height + Settings::KPSWindowDistanceBetween + Settings::KPSWindowTopPadding);
+        textTransform.translate({
+            (static_cast<float>(mWindow.getSize().x)
+                - textBounds.size.x
+                + textBounds.position.x) / 2.f,
+            Settings::KPSWindowTopPadding
+        });
+
+        numberTransform.translate({
+            static_cast<float>(mWindow.getSize().x) / 2.f
+                - numberBounds.position.x,
+
+            textBounds.size.y
+                + Settings::KPSWindowDistanceBetween
+                + Settings::KPSWindowTopPadding
+        });
 
         mWindow.clear(Settings::KPSBackgroundColor);
 
         mWindow.draw(mKPSText, textTransform);
-        mWindow.draw(mKPSNumber, numberTranform);
+        mWindow.draw(mKPSNumber, numberTransform);
 
         mWindow.display();
     }
@@ -79,9 +107,23 @@ void KPSWindow::render()
 
 void KPSWindow::updateParameters()
 {
-    mKPSText.setOrigin(mKPSText.getLocalBounds().left, mKPSText.getLocalBounds().top);
-    mKPSNumber.setOrigin((mKPSNumber.getLocalBounds().left + mKPSNumber.getLocalBounds().width) / 2.f, 
-        mKPSNumber.getLocalBounds().top);
+    {
+        const auto bounds = mKPSText.getLocalBounds();
+
+        mKPSText.setOrigin({
+            bounds.position.x,
+            bounds.position.y
+        });
+    }
+
+    {
+        const auto bounds = mKPSNumber.getLocalBounds();
+
+        mKPSNumber.setOrigin({
+            (bounds.position.x + bounds.size.x) / 2.f,
+            bounds.position.y
+        });
+    }
 
     mKPSText.setCharacterSize(Settings::KPSTextSize);
     mKPSNumber.setCharacterSize(Settings::KPSNumberSize);
@@ -89,9 +131,18 @@ void KPSWindow::updateParameters()
     mKPSText.setFillColor(Settings::KPSTextColor);
     mKPSNumber.setFillColor(Settings::KPSNumberColor);
 
-    mWindow.setSize(sf::Vector2u(Settings::KPSWindowSize.x, Settings::KPSWindowSize.y));
-    mWindow.setView(sf::View( { 0, 0, static_cast<float>(Settings::KPSWindowSize.x), static_cast<float>(Settings::KPSWindowSize.y) } ));
-}   
+    mWindow.setSize(sf::Vector2u(
+        Settings::KPSWindowSize.x,
+        Settings::KPSWindowSize.y));
+
+    mWindow.setView(sf::View(sf::FloatRect(
+        {0.f, 0.f},
+        {
+            static_cast<float>(Settings::KPSWindowSize.x),
+            static_cast<float>(Settings::KPSWindowSize.y)
+        }
+    )));
+}
 
 void KPSWindow::updateAssets()
 {
@@ -101,7 +152,8 @@ void KPSWindow::updateAssets()
 
 void KPSWindow::openWindow()
 {
-    sf::Uint32 style;
+    std::uint32_t style;
+
 #ifdef _WIN32
     style = sf::Style::Close;
 #elif linux
@@ -110,14 +162,24 @@ void KPSWindow::openWindow()
 #error Unsupported compiler
 #endif
 
-    mWindow.create(sf::VideoMode(Settings::KPSWindowSize.x, 
-        Settings::KPSWindowSize.y), "KPS Window", style);
+    mWindow.create(
+        sf::VideoMode({
+            Settings::KPSWindowSize.x,
+            Settings::KPSWindowSize.y
+        }),
+        "KPS Window",
+        style);
 
 #ifdef linux
     auto desktop = sf::VideoMode::getDesktopMode();
+
     mWindow.setPosition(sf::Vector2i(
-        desktop.width / 1.5  - mWindow.getSize().x / 2, 
-        desktop.height / 2 - mWindow.getSize().y / 2));
+        static_cast<int>(desktop.size.x / 1.5f
+            - mWindow.getSize().x / 2.f),
+
+        static_cast<int>(desktop.size.y / 2.f
+            - mWindow.getSize().y / 2.f)
+    ));
 #endif
 }
 

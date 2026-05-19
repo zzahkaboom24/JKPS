@@ -5,6 +5,9 @@
 
 #include <SFML/Window/Event.hpp>
 
+#include <cstdint>
+#include <optional>
+
 
 float Palette::mDistance(0.2f);
 
@@ -33,10 +36,8 @@ Palette::Palette(int)
     }
 
     mLineRect = sf::FloatRect(
-        mLine[0].position.x, 
-        mLine[0].position.y, 
-        mLine[1].position.x - mLine[0].position.x, 
-        mLine[mLineSize - 1].position.y - mLine[0].position.y);
+        {mLine[0].position.x, mLine[0].position.y},
+        {mLine[1].position.x - mLine[0].position.x, mLine[mLineSize - 1].position.y - mLine[0].position.y});
 
     mLineIndicator.setSize(sf::Vector2f(25.f, 3.f));
     mLineIndicator.setOutlineThickness(1.f);
@@ -48,18 +49,16 @@ Palette::Palette(int)
 	const auto origin = sf::Vector2f(35.f, 0.f);
     mCanvas[0].position = origin + sf::Vector2f(decrease, decrease);
     mCanvas[0].color = sf::Color::White;
-    mCanvas[1].position = origin + sf::Vector2f(0.f, mLineRect.height) + sf::Vector2f(decrease, -decrease);
+    mCanvas[1].position = origin + sf::Vector2f(0.f, mLineRect.size.y) + sf::Vector2f(decrease, -decrease);
     mCanvas[1].color = sf::Color::Black;
-    mCanvas[2].position = origin + sf::Vector2f(300.f, mLineRect.height) + sf::Vector2f(-decrease, -decrease);
+    mCanvas[2].position = origin + sf::Vector2f(300.f, mLineRect.size.y) + sf::Vector2f(-decrease, -decrease);
     mCanvas[2].color = sf::Color::Black;
     mCanvas[3].position = origin + sf::Vector2f(300.f, 0.f) - sf::Vector2f(decrease, -decrease);
     mCanvas[3].color = sf::Color::Red;
 
     mCanvasRect = sf::FloatRect(
-        mCanvas[0].position.x, 
-        mCanvas[0].position.y, 
-        mCanvas[2].position.x - mCanvas[0].position.x, 
-        mCanvas[2].position.y - mCanvas[0].position.y
+        {mCanvas[0].position.x, mCanvas[0].position.y},
+        {mCanvas[2].position.x - mCanvas[0].position.x, mCanvas[2].position.y - mCanvas[0].position.y}
     );
 
     float r = 6.f;
@@ -75,12 +74,12 @@ void Palette::processInput()
     processOwnEvents();
     if (mWindow.hasFocus())
     {
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Left)
-        ||  sf::Keyboard::isKeyPressed(sf::Keyboard::Down)
-        ||  sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)
+        ||  sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down)
+        ||  sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
         {
             moveLineIndicator();
-            if (wasButtonPressedOnCanvas && sf::Mouse::isButtonPressed(sf::Mouse::Left))
+            if (wasButtonPressedOnCanvas && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
                 moveCanvasIndicator();
             setColor();
         }
@@ -104,11 +103,11 @@ void Palette::moveLineIndicator()
         if (mousePos.y >= 0 && mousePos.y <= mLine[mLineSize - 1].position.y)
             mLineElemIdx = positionToNumber(mousePos);
 
-        mLineIndicator.setPosition(mLineIndicator.getPosition().x, mLine[mLineElemIdx].position.y);
+        mLineIndicator.setPosition({mLineIndicator.getPosition().x, mLine[mLineElemIdx].position.y});
     }
-    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
         goUp();
-    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
         goDown();
 
 }
@@ -135,21 +134,21 @@ void Palette::moveCanvasIndicator()
         static_cast<sf::Vector2i>(mWindowOffset);
 
     // Make canvas indicator move even if cursor is outside the palette
-    if (mousePos.x < mCanvasRect.left)
-        mousePos.x = mCanvasRect.left;
+    if (mousePos.x < mCanvasRect.position.x)
+        mousePos.x = mCanvasRect.position.x;
 
-    if (mousePos.x > mCanvasRect.width + mCanvasRect.left)
-        mousePos.x = mCanvasRect.width + mCanvasRect.left;
+    if (mousePos.x > mCanvasRect.size.x + mCanvasRect.position.x)
+        mousePos.x = mCanvasRect.size.x + mCanvasRect.position.x;
 
-    if (mousePos.y < mCanvasRect.top)
-        mousePos.y = mCanvasRect.top;
+    if (mousePos.y < mCanvasRect.position.y)
+        mousePos.y = mCanvasRect.position.y;
 
-    if (mousePos.y > mCanvasRect.height)
-        mousePos.y = mCanvasRect.height;
+    if (mousePos.y > mCanvasRect.size.y)
+        mousePos.y = mCanvasRect.size.y;
 
     mNormilizedMousePos = sf::Vector2f(
-        (mousePos.x - mCanvasRect.left) / mCanvasRect.width, 
-        (mousePos.y - mCanvasRect.top) / mCanvasRect.height);
+        (mousePos.x - mCanvasRect.position.x) / mCanvasRect.size.x, 
+        (mousePos.y - mCanvasRect.position.y) / mCanvasRect.size.y);
     
     mCanvasIndicator.setPosition(sf::Vector2f(mousePos));
 }
@@ -170,30 +169,28 @@ void Palette::setColor()
 
 void Palette::processOwnEvents()
 {
-    auto event = sf::Event();
-    while (mWindow.pollEvent(event))
+    while (const std::optional event = mWindow.pollEvent())
     {
         // Move on the line by only one step
-        if (event.type == sf::Event::KeyPressed)
+        if (const auto* keyP = event->getIf<sf::Event::KeyPressed>())
         {
-            const auto key = event.key;
-            if (key.code == sf::Keyboard::Left)
+            if (keyP->code == sf::Keyboard::Key::Left)
                 goUp();
-            else if (key.code == sf::Keyboard::Right)
+            else if (keyP->code == sf::Keyboard::Key::Right)
                 goDown();
 
-            if (key.control && key.code == Settings::KeyExit)
+            if (Settings::KeyExit.isTriggered(keyP))
             {
                 closeWindow();
                 return;
             }
 
-            mLineIndicator.setPosition(mLineIndicator.getPosition().x, mLine[mLineElemIdx].position.y);
+            mLineIndicator.setPosition({mLineIndicator.getPosition().x, mLine[mLineElemIdx].position.y});
             setColor();
         }
 
         // Don't move the indicator of anything if the left mouse button wasn't pressed on that area
-        if (event.type == sf::Event::MouseButtonPressed)
+        if (const auto* mouseBtn = event->getIf<sf::Event::MouseButtonPressed>())
         {
             const auto mousePos = 
 				static_cast<sf::Vector2f>(sf::Mouse::getPosition(mWindow)) -
@@ -205,10 +202,10 @@ void Palette::processOwnEvents()
                 wasButtonPressedOnLine = true;
         }
 
-        if (event.type == sf::Event::MouseButtonReleased)
+        if (event->is<sf::Event::MouseButtonReleased>())
             wasButtonPressedOnCanvas = wasButtonPressedOnLine = false;
 
-        if (event.type == sf::Event::Closed)
+        if (event->is<sf::Event::Closed>())
             mWindow.close();
     }
 }
@@ -220,9 +217,9 @@ void Palette::render()
     auto transform = sf::Transform::Identity;
     transform.translate(mWindowOffset);
 
-    mWindow.draw(mLine.data(), mLineSize, sf::TriangleStrip, transform);
+    mWindow.draw(mLine.data(), mLineSize, sf::PrimitiveType::TriangleStrip, transform);
     mWindow.draw(mLineIndicator, transform);
-    mWindow.draw(mCanvas.data(), 4, sf::Quads, transform);
+    mWindow.draw(mCanvas.data(), 4, sf::PrimitiveType::TriangleFan, transform);
     mWindow.draw(mCanvasIndicator, transform);
 
     mWindow.display();
@@ -237,7 +234,7 @@ void Palette::openWindow(sf::Vector2i position)
 {
     if (!mWindow.isOpen())
     {
-        sf::Uint32 style;
+        std::uint32_t style;
 #ifdef _WIN32
         style = sf::Style::Close;
 #elif linux
@@ -249,7 +246,7 @@ void Palette::openWindow(sf::Vector2i position)
         const auto width = 340.f + mWindowOffset.x * 2.f;
         const auto height = mDistance * (mLineSize - 1) / 2.f + mWindowOffset.y * 2.f;
 
-        mWindow.create(sf::VideoMode(width, height), "JKPS RGB color selector", style);
+        mWindow.create(sf::VideoMode({static_cast<unsigned>(width), static_cast<unsigned>(height)}), "JKPS RGB color selector", style);
         mWindow.setKeyRepeatEnabled(false);
     }
 }
@@ -273,7 +270,7 @@ sf::Color Palette::rgb(double ratio)
     // find the distance to the start of the closest region
     int x = normalized % 256;
 
-    sf::Uint8 red = 0, grn = 0, blu = 0;
+    std::uint8_t red = 0, grn = 0, blu = 0;
     switch(normalized / 256)
     {
     case 0: red = 255;      grn = 0;        blu = x;       break; // red -> magenta

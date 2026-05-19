@@ -12,6 +12,8 @@
 #include <SFML/System/Clock.hpp>
 
 #include <limits.h>
+#include <optional>
+#include <cstdint>
 
 
 Menu::Menu()
@@ -35,7 +37,7 @@ Menu::Menu()
         ConfigHelper::saveConfig(mParameters, mParameterLines, nullptr, false);
 
     mSliderBar.setOrigin(mSliderBar.getSize() / 2.f);
-    mSliderBar.setPosition(949.f, 100.f);
+    mSliderBar.setPosition({949.f, 100.f});
     mSliderBar.setFillColor(mSliderBarDefaultColor);
 
     mTabs.at(mSelectedTab)->mRect.setFillColor(GfxParameter::defaultSelectedRectColor);
@@ -54,7 +56,7 @@ void Menu::handleEvent()
     auto switchTab = [this] (size_t index)
         {
             // Reset slider
-            mSliderBar.setPosition(mSliderBar.getPosition().x, 100.f);
+            mSliderBar.setPosition({mSliderBar.getPosition().x, 100.f});
 
             // Deselect old tab
             mTabs[mSelectedTab]->mRect.setFillColor(GfxParameter::defaultRectColor);
@@ -66,16 +68,18 @@ void Menu::handleEvent()
             mTabs[index]->mRect.setFillColor(GfxParameter::defaultSelectedRectColor);
         };
 
-    sf::Event event;
     static bool scrollCursorClicked;
-    while (mWindow.pollEvent(event))
+    while (const std::optional event = mWindow.pollEvent())
     {
-        if (event.type == sf::Event::MouseButtonPressed 
-        ||  event.type == sf::Event::KeyPressed
-        ||  event.type == sf::Event::MouseWheelScrolled)
+        const auto* kp = event->getIf<sf::Event::KeyPressed>();
+        const auto* mbp = event->getIf<sf::Event::MouseButtonPressed>();
+        const auto* mbr = event->getIf<sf::Event::MouseButtonReleased>();
+        const auto* mws = event->getIf<sf::Event::MouseWheelScrolled>();
+        const auto* mmv = event->getIf<sf::Event::MouseMoved>();
+
+        if (mbp || kp || mws)
         {
-            if (event.type == sf::Event::KeyPressed 
-            &&  event.key.code == sf::Keyboard::Escape)
+            if (kp && kp->code == sf::Keyboard::Key::Escape)
             {
                 ParameterLine::deselectValue();
                 continue;
@@ -91,7 +95,7 @@ void Menu::handleEvent()
 
             for (; it != end; ++it)
             {
-                if (it->second->handleEvent(event))
+                if (it->second->handleEvent(*event))
                 {
                     isAnyLineSelected = true;
                     break;
@@ -101,25 +105,25 @@ void Menu::handleEvent()
             if (!isAnyLineSelected)
             {
                 // If a key was pressed, but mouse aims at no box - deselect
-                if (event.type != sf::Event::MouseWheelScrolled)
+                if (!mws)
                     ParameterLine::deselectValue();
 
                 // If the mouse wheel was scrolled and no value is selected - scroll
-                if (event.type == sf::Event::MouseWheelScrolled || event.type == sf::Event::KeyPressed)
+                if (mws || kp)
                 {
                     auto offset = 0.f;
 
-                    if (event.type == sf::Event::MouseWheelScrolled)
+                    if (mws)
                     {
-                        offset = -mScrollSpeed * event.mouseWheelScroll.delta;
+                        offset = -mScrollSpeed * mws->delta;
                     }
-                    if (event.type == sf::Event::KeyPressed)
+                    if (kp)
                     {
-                        const auto key = event.key.code;
+                        const auto keyCode = kp->code;
                         const auto viewSize = mView.getSize();
-                        if (key == sf::Keyboard::PageUp)
+                        if (keyCode == sf::Keyboard::Key::PageUp)
                             offset = -viewSize.y;
-                        if (key == sf::Keyboard::PageDown)
+                        if (keyCode == sf::Keyboard::Key::PageDown)
                             offset = viewSize.y;
                     }
 
@@ -129,27 +133,25 @@ void Menu::handleEvent()
             }
         }
 
-        if (event.type == sf::Event::MouseButtonPressed 
-        ||  event.type == sf::Event::MouseButtonReleased
-        ||  event.type == sf::Event::MouseMoved)
+        if (mbp || mbr || mmv)
         {
             auto mousePos = sf::Mouse::getPosition(mWindow);
             auto colorToSet = mSliderBarDefaultColor;
-            if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+            if (mbr && mbr->button == sf::Mouse::Button::Left)
                 scrollCursorClicked = false;
             if (mSliderBar.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos)))
             {
                 colorToSet = mSliderBarAimedColor;
-                scrollCursorClicked = sf::Mouse::isButtonPressed(sf::Mouse::Left);
+                scrollCursorClicked = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
             }
             if (scrollCursorClicked)
                 colorToSet = mSliderBarPressedColor;
 
             mSliderBar.setFillColor(colorToSet);
-            if (event.type == sf::Event::MouseMoved)
+            if (mmv)
             {
-                mousePos.x = event.mouseMove.x;
-                mousePos.y = event.mouseMove.y;
+                mousePos.x = mmv->position.x;
+                mousePos.y = mmv->position.y;
             }
             if (scrollCursorClicked)
             {
@@ -157,9 +159,7 @@ void Menu::handleEvent()
             }
         }
 
-        if (event.type == sf::Event::MouseButtonPressed 
-        ||  event.type == sf::Event::MouseButtonReleased
-        ||  event.type == sf::Event::MouseMoved)
+        if (mbp || mbr || mmv)
         {
             const auto viewOrigin = mView.getCenter() - mView.getSize() / 2.f;
             const auto relCursorPos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(mWindow));
@@ -172,8 +172,7 @@ void Menu::handleEvent()
                 if (tab->contains(relCursorPos))
                 {
                     color = GfxParameter::defaultAimedRectColor;
-                    if (event.type == sf::Event::MouseButtonPressed
-                    &&  event.mouseButton.button == sf::Mouse::Left)
+                    if (mbp && mbp->button == sf::Mouse::Button::Left)
                     {
                         switchTab(idx);
                     }
@@ -188,17 +187,16 @@ void Menu::handleEvent()
             
             for (auto &[id, block] : mKeyBlocks)
             {
-                block->handleEvent(event, absCursorPos);
+                block->handleEvent(*event, absCursorPos);
             }
         }
 
-        if (event.type == sf::Event::KeyPressed)
+        if (kp)
         {
-            const auto key = event.key;
-            if (key.code == sf::Keyboard::Tab)
+            if (kp->code == sf::Keyboard::Key::Tab)
             {
-                const auto lCtrl = key.control;
-                const auto lShift = key.shift;
+                const auto lCtrl = kp->control;
+                const auto lShift = kp->shift;
 
                 // Tab forward
                 if (!lShift && lCtrl)
@@ -217,17 +215,16 @@ void Menu::handleEvent()
             }
         }
         
-        if (event.type == sf::Event::KeyPressed)
+        if (kp)
         {
-            const auto key = event.key;
-            if (key.control && key.code == Settings::KeyExit)
+            if (Settings::KeyExit.isTriggered(kp))
             {
                 closeWindow();
                 return;
             }
         }
 
-        if (event.type == sf::Event::Closed)
+        if (event->is<sf::Event::Closed>())
         {
             closeWindow();
             return;
@@ -240,9 +237,9 @@ void Menu::handleRealtimeInput()
     if (mWindow.hasFocus() && !ParameterLine::isValueSelected())
     {
         auto offset = 0.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
             offset = -mScrollSpeed;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
             offset = mScrollSpeed;
         if (offset != 0.f)
         {
@@ -312,7 +309,7 @@ void Menu::render()
 
 void Menu::openWindow()
 {
-    sf::Uint32 style;
+    std::uint32_t style;
 #ifdef _WIN32
     style = sf::Style::Close;
 #elif linux
@@ -321,10 +318,10 @@ void Menu::openWindow()
 #error Unsupported compiler
 #endif
 
-    mWindow.create(sf::VideoMode(959, 700), "JKPS Menu", style);
+    mWindow.create(sf::VideoMode({959u, 700u}), "JKPS Menu", style);
     mView = mWindow.getView();
     selectTab(mSelectedTab);
-    mSliderBar.setPosition(mSliderBar.getPosition().x, mSliderBar.getSize().y / 2);
+    mSliderBar.setPosition({mSliderBar.getPosition().x, mSliderBar.getSize().y / 2});
 }
 
 void Menu::closeWindow()
@@ -367,7 +364,7 @@ void Menu::loadTextures()
 
 void Menu::selectTab(unsigned idx)
 {
-    mView.setCenter(1000.f * static_cast<float>(idx) + static_cast<float>(mWindow.getSize().x) / 2.f, 0.f);
+    mView.setCenter({1000.f * static_cast<float>(idx) + static_cast<float>(mWindow.getSize().x) / 2.f, 0.f});
     mWindow.setView(mView);
 }
 
@@ -412,6 +409,7 @@ void Menu::initCollectionNames()
     mCollectionNames.emplace_back("[Key press visualization]");
     mCollectionNames.emplace_back("[Key press visualization advanced settings]");
     mCollectionNames.emplace_back("[Other]");
+    mCollectionNames.emplace_back("[Hotkeys]");
     mCollectionNames.emplace_back("[Statistics save]");
 }
 
@@ -448,6 +446,7 @@ void Menu::buildMenuTabs()
     addTab("Extra KPS\n  window", highTabSize);
     addTab("  Key press\nvisualization", highTabSize);
     addTab("Other", tabSize);
+    addTab("Hotkeys", tabSize);
     addTab("Main info", tabSize);
 
     mTabsBackground.setSize(sf::Vector2f(tabSize.x + offset.x * 2.f, 700.f));
@@ -721,6 +720,16 @@ void Menu::buildParametersMap()
     mParameters.emplace(std::make_pair(LogicalParameter::ID::OtherShowOppOnAlt,           new LogicalParameter(LogicalParameter::Type::Bool,          &Settings::ShowOppOnAlt,                                "Show opposite key values on alt press", "True")));
     mParameters.emplace(std::make_pair(LogicalParameter::ID::OtherMultpl,                 new LogicalParameter(LogicalParameter::Type::Unsigned,      &Settings::ButtonPressMultiplier,                       "Value to multiply on click", "1", 0, 1000000)));
 
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyAddKeys,             new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyToIncreaseKeys,                           "Add keyboard keys", Settings::KeyToIncreaseKeys.toString())));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyRmKeys,              new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyToDecreaseKeys,                           "Remove keyboard keys", Settings::KeyToDecreaseKeys.toString())));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyAddMouse,            new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyToIncreaseButtons,                        "Add mouse buttons", Settings::KeyToIncreaseButtons.toString())));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyRmMouse,             new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyToDecreaseButtons,                        "Remove mouse buttons", Settings::KeyToDecreaseButtons.toString())));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyExit,                new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyExit,                                     "Close the program", Settings::KeyExit.toString())));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyReset,               new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyToReset,                                  "Reset all the statistics", Settings::KeyToReset.toString())));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyMenu,                new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyToOpenMenuWindow,                         "Open graphical menu", Settings::KeyToOpenMenuWindow.toString())));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyKPSWindow,           new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyToOpenKPSWindow,                          "Open KPS extra window", Settings::KeyToOpenKPSWindow.toString())));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyGraphWindow,         new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyToOpenGraphWindow,                        "Open Graph window", Settings::KeyToOpenGraphWindow.toString())));
+
     mParameters.emplace(std::make_pair(LogicalParameter::ID::SaveStatMaxKPS,              new LogicalParameter(LogicalParameter::Type::Float,         &Settings::MaxKPS,                                      "Saved max KPS", "0", 0u, INT_MAX)));
     mParameters.emplace(std::make_pair(LogicalParameter::ID::SaveStatTotal,               new LogicalParameter(LogicalParameter::Type::Unsigned,      &Settings::Total,                                       "Saved total", "0", 0u, INT_MAX)));
     for (auto i = 0ul; i < Settings::SupportedAdvancedKeysNumber; ++i)
@@ -813,6 +822,15 @@ void Menu::buildParameterLines()
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::OtherColl, new ParameterLine(parP, mFonts, mTextures, mWindow)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::OtherMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
 
+    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Hint, nullptr, "Click a hotkey to edit it, then press keys to form the combo.\nBackspace - clear, Enter / Escape - confirm"));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyHint, new ParameterLine(parP, mFonts, mTextures, mWindow)));
+    mParameterLines[ParameterLine::ID::HotkeyHint]->setCharacterSize(17u);
+
+    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, mCollectionNames.at(collectionNameIdx++)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyColl, new ParameterLine(parP, mFonts, mTextures, mWindow)));
+
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::HotkeyMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
+
     parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, mCollectionNames.at(collectionNameIdx++)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::SaveStatColl, new ParameterLine(parP, mFonts, mTextures, mWindow)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::SaveStatMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
@@ -834,30 +852,7 @@ void Menu::buildParameterLines()
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::InfoMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
 
 
-    unsigned hotKey = static_cast<unsigned>(ParameterLine::ID::HotKey1);
-    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, "[Hotkeys]"));
-    mParameterLines.emplace(std::make_pair(static_cast<ParameterLine::ID>(hotKey++), new ParameterLine(parP, mFonts, mTextures, mWindow)));
-
-    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, "Ctrl + \"+/-\" - Add/remove keyboard keys"));
-    mParameterLines.emplace(std::make_pair(static_cast<ParameterLine::ID>(hotKey++), new ParameterLine(parP, mFonts, mTextures, mWindow)));
-
-    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, "Ctrl + \"</>\" - Add/remove mouse buttons"));
-    mParameterLines.emplace(std::make_pair(static_cast<ParameterLine::ID>(hotKey++), new ParameterLine(parP, mFonts, mTextures, mWindow)));
-
-    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, "Ctrl + W - Close the program"));
-    mParameterLines.emplace(std::make_pair(static_cast<ParameterLine::ID>(hotKey++), new ParameterLine(parP, mFonts, mTextures, mWindow)));
-
-    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, "Ctrl + X - Reset all the statistics"));
-    mParameterLines.emplace(std::make_pair(static_cast<ParameterLine::ID>(hotKey++), new ParameterLine(parP, mFonts, mTextures, mWindow)));
-
-    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, "Ctrl + A - Open graphical menu"));
-    mParameterLines.emplace(std::make_pair(static_cast<ParameterLine::ID>(hotKey++), new ParameterLine(parP, mFonts, mTextures, mWindow)));
-
-    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, "Ctrl + K - Open KPS extra window"));
-    mParameterLines.emplace(std::make_pair(static_cast<ParameterLine::ID>(hotKey++), new ParameterLine(parP, mFonts, mTextures, mWindow)));
-
-    parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, "Alt (hold) - Show opposite buttons values"));
-    mParameterLines.emplace(std::make_pair(static_cast<ParameterLine::ID>(hotKey++), new ParameterLine(parP, mFonts, mTextures, mWindow)));
+    mParameterLines.emplace(std::make_pair(ParameterLine::ID::InfoMty, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
 
     parP = sPtr(new LogicalParameter(LogicalParameter::Type::Collection, nullptr, "Program version: " + std::string(PROGRAM_VERSION)));
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::ProgramVersion, new ParameterLine(parP, mFonts, mTextures, mWindow)));
@@ -865,6 +860,19 @@ void Menu::buildParameterLines()
     mParameterLines.emplace(std::make_pair(ParameterLine::ID::LastLine, new ParameterLine(emptyP, mFonts, mTextures, mWindow)));
 
     positionMenuLines();
+
+    // Shift all Hotkeys tab items below the hint down so the gap matches
+    // the standard 10px spacing between rows (hint is taller than one step).
+    {
+        const float hintHeight = mParameterLines.at(ParameterLine::ID::HotkeyHint)->getHeight();
+        const float hintY      = mParameterLines.at(ParameterLine::ID::HotkeyHint)->getPosition().y;
+        const float collY      = mParameterLines.at(ParameterLine::ID::HotkeyColl)->getPosition().y;
+        const float shift      = hintY + hintHeight + 10.f - collY;
+        const auto  first      = static_cast<size_t>(ParameterLine::ID::HotkeyColl);
+        const auto  last       = static_cast<size_t>(ParameterLine::ID::HotkeyMty);
+        for (auto i = first; i <= last; ++i)
+            mParameterLines.at(static_cast<ParameterLine::ID>(i))->move({0.f, shift});
+    }
 }
 
 void Menu::positionMenuLines()
@@ -884,7 +892,7 @@ void Menu::positionMenuLines()
             if (id == ParameterLine::ID::LastLine)
             {
                 mParameterLines.at(ParameterLine::ID::ProgramVersion)
-                    ->move(0.f, halfWindowSize - step.y * 3.f + padding);
+                    ->move({0.f, halfWindowSize - step.y * 3.f + padding});
             }
             mBounds.push_back(step.y * (row - 2u) - halfWindowSize + padding);
             row = 0u;
@@ -905,7 +913,7 @@ void Menu::positionMenuLines()
         else
         {
             // Hide them
-            line->setPosition(-1000.f, -1000.f);
+            line->setPosition({-1000.f, -1000.f});
         }
     }
 }
@@ -937,8 +945,8 @@ void Menu::moveSliderBarButtons(float offset)
     const float sliderbarX = sliberbarPosition.x;
     const float sliderbarY = projectedSliderbarPositionY;
 
-    mSliderBar.setPosition(sliderbarX, sliderbarY);
-    mView.setCenter(mView.getCenter().x, mView.getCenter().y + offset);
+    mSliderBar.setPosition({sliderbarX, sliderbarY});
+    mView.setCenter({mView.getCenter().x, mView.getCenter().y + offset});
 }
 
 // Real window height - 600, sliderbar height - 200
@@ -965,8 +973,8 @@ void Menu::moveSliderBarMouse(sf::Vector2i mousePos)
     const float virtualCursorPositionY = sliderbarY - sliderbarSize.y / 2.f;
     const float normilizedViewHeight = virtualCursorPositionY / virtualWindowHeight;
 
-    mSliderBar.setPosition(sliderbarX, sliderbarY);
-    mView.setCenter(mView.getCenter().x, mBounds[mSelectedTab] * normilizedViewHeight);
+    mSliderBar.setPosition({sliderbarX, sliderbarY});
+    mView.setCenter({mView.getCenter().x, mBounds[mSelectedTab] * normilizedViewHeight});
 }
 
 void Menu::returnViewInBounds()
@@ -976,14 +984,14 @@ void Menu::returnViewInBounds()
 
     if (mBounds[mSelectedTab] < mView.getSize().y / 4)
     {
-        mView.setCenter(mView.getCenter().x, 0);
+        mView.setCenter({mView.getCenter().x, 0.f});
         return;
     }
 
     if (tooHigh)
-        mView.setCenter(mView.getCenter().x, mHighViewBounds);
+        mView.setCenter({mView.getCenter().x, mHighViewBounds});
     if (tooLow)
-        mView.setCenter(mView.getCenter().x, mBounds[mSelectedTab]);
+        mView.setCenter({mView.getCenter().x, mBounds[mSelectedTab]});
 }
 
 void Menu::saveConfig(const std::vector<std::unique_ptr<Button>> &mKeys)
@@ -1098,15 +1106,17 @@ void Menu::KeyBlock::handleEvent(sf::Event event, sf::Vector2f absCursorPos)
         if (rect.contains(absCursorPos))
         {
             color = GfxParameter::defaultAimedRectColor;
-            if (event.type == sf::Event::MouseButtonPressed
-            &&  event.mouseButton.button == sf::Mouse::Left)
+            if (const auto* mouseBtn = event.getIf<sf::Event::MouseButtonPressed>())
             {
-                // Deselect old tab
-                current().mRect.setFillColor(GfxParameter::defaultRectColor);
+                if (mouseBtn->button == sf::Mouse::Button::Left)
+                {
+                    // Deselect old tab
+                    current().mRect.setFillColor(GfxParameter::defaultRectColor);
 
-                // Select new tab
-                select(idx);
-                mSelectedKeyIdx = idx;
+                    // Select new tab
+                    select(idx);
+                    mSelectedKeyIdx = idx;
+                }
             }
         }
         

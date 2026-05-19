@@ -6,8 +6,8 @@
 
 
 ColorButton::ColorButton(const sf::Texture &texture)
+: rgbCircleSprite(texture) // SFML 3 requires texture on construction
 {
-    rgbCircleSprite.setTexture(texture);
 }
 
 void ColorButton::draw(sf::RenderTarget &target, sf::RenderStates states) const

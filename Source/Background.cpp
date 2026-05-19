@@ -12,8 +12,8 @@
 Background::Background(const TextureHolder& textureHolder, sf::RenderWindow& window)
 : mWindow(window)
 , mTextures(textureHolder)
+, mBackgroundSprite(mTextures.get(Textures::Background)) // SFML 3: Sprite requires a Texture on construction
 { 
-    mBackgroundSprite.setTexture(mTextures.get(Textures::Background));
     updateAssets();
 }
 
@@ -24,14 +24,18 @@ void Background::draw(sf::RenderTarget &target, sf::RenderStates states) const
 
 void Background::rescale()
 {
-    sf::Vector2f scale(1.f, 1.f);
+    // SFML 3: sf::Vector2 no longer takes loose (x, y) arguments, requires braces
+    sf::Vector2f scale{1.f, 1.f}; 
+    
     if (Settings::ScaleBackground)
     {
         sf::Vector2u windowSize = mWindow.getSize();
-        sf::Vector2f bgSize(mBackgroundSprite.getTexture()->getSize());
+        
+        // SFML 3: getTexture() returns a reference, not a pointer
+        sf::Vector2u bgSize = mBackgroundSprite.getTexture().getSize();
 
-        scale.x = static_cast<float>(windowSize.x) / bgSize.x;
-        scale.y = static_cast<float>(windowSize.y) / bgSize.y;
+        scale.x = static_cast<float>(windowSize.x) / static_cast<float>(bgSize.x);
+        scale.y = static_cast<float>(windowSize.y) / static_cast<float>(bgSize.y);
     }
     mBackgroundSprite.setScale(scale);
     mBackgroundSprite.setColor(Settings::isGreenscreenSet ? sf::Color::White : Settings::BackgroundColor);

@@ -1,5 +1,6 @@
 #include "../Headers/MathHelper.hpp"
 
+#include <cstdint>
 #include <string>
 #include <stdexcept>
 
@@ -15,7 +16,7 @@ float lerp(float a, float b, float f)
 
 sf::Color colorLerp(sf::Color a, sf::Color b, float f)
 {
-    return { static_cast<sf::Uint8>(lerp(a.r, b.r, f)),
-             static_cast<sf::Uint8>(lerp(a.g, b.g, f)),
-             static_cast<sf::Uint8>(lerp(a.b, b.b, f)) };
+    return { static_cast<std::uint8_t>(lerp(a.r, b.r, f)),
+             static_cast<std::uint8_t>(lerp(a.g, b.g, f)),
+             static_cast<std::uint8_t>(lerp(a.b, b.b, f)) };
 }
