@@ -57,7 +57,7 @@ Click with **right mouse button** on the button to edit it
 - Capture the program as a game in OBS, not as a window.
 - To make the program work with greenscreen write **"GreenscreenBG.png"** in **"Main window" -> "Background texture filepath"** and press Enter or Refresh button.
 - If the program lags only in OBS then close its menu.
-- [**SFML 3+**](https://www.sfml-dev.org/) must be installed.
+- [**SFML 3+**](https://www.sfml-dev.org/) must be installed, if you want to build from source.
 
 # [Themes](Wiki/Themes.md)
 
