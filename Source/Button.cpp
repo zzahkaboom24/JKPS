@@ -2,6 +2,7 @@
 #include "../Headers/ResourceHolder.hpp"
 #include "../Headers/Settings.hpp"
 #include "../Headers/StringHelper.hpp"
+#include <SFML/System/String.hpp>
 
 
 unsigned Button::mSize(0u);
@@ -61,7 +62,7 @@ void Button::setTextStrings()
     if (Settings::ButtonTextShowVisualKeys) 
     {
         if ((!lAlt) || (lAlt && sepValAdvMode && Settings::ButtonTextShowTotal))
-            mTexts[VisualKey]->setString(LogButton::mKey.visualStr);
+            mTexts[VisualKey]->setString(sf::String::fromUtf8(LogButton::mKey.visualStr.begin(), LogButton::mKey.visualStr.end()));
         else
             mTexts[VisualKey]->setString(std::to_string(LogButton::mTotal));
     }
@@ -70,7 +71,7 @@ void Button::setTextStrings()
         if ((!lAlt) || (lAlt && sepValAdvMode && Settings::ButtonTextShowVisualKeys))
             mTexts[KeyCounter]->setString(std::to_string(LogButton::mTotal));
         else
-            mTexts[KeyCounter]->setString(LogButton::mKey.visualStr);
+            mTexts[KeyCounter]->setString(sf::String::fromUtf8(LogButton::mKey.visualStr.begin(), LogButton::mKey.visualStr.end()));
     }
     if (Settings::ButtonTextShowKPS)
     {

@@ -9,8 +9,6 @@
 #include <optional>
 #include <cstdint>
 
-static unsigned maxLen = 4U;
-
 KPSWindow::KPSWindow(const FontHolder& fonts)
 : mFonts(fonts)
 , mKPSText(fonts.get(Fonts::KPSText))
@@ -156,7 +154,7 @@ void KPSWindow::openWindow()
 
 #ifdef _WIN32
     style = sf::Style::Close;
-#elif linux
+#elif __linux__
     style = sf::Style::Default;
 #else
 #error Unsupported compiler

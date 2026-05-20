@@ -71,6 +71,6 @@ void ResourceHolder<Resource, Identifier>::clear()
 template <typename Resource, typename Identifier>
 void ResourceHolder<Resource, Identifier>::insertResource(Identifier id, std::unique_ptr<Resource> resource)
 {
-    auto inserted = mResourceMap.insert(std::make_pair(id, std::move(resource)));
+    [[maybe_unused]] auto inserted = mResourceMap.insert(std::make_pair(id, std::move(resource)));
     assert(inserted.second);
 }

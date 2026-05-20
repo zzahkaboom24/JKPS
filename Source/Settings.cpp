@@ -164,6 +164,14 @@ unsigned char* DefaultGreenscreenBackgroundTexture = GreenscreenTexture;
 unsigned char* DefaultKPSWindowFont = KPSWindowDefaultFont;
 unsigned char* KeyPressVisTexture = KeyPressVisTextureH;
 
+std::size_t StatisticsDefaultFontSize = MainProgramFont_size;
+std::size_t KeyCountersDefaultFontSize = MainProgramFont_size;
+std::size_t DefaultButtonTextureSize = ButtonTexture_size;
+std::size_t DefaultAnimationTextureSize = AnimationTexture_size;
+std::size_t DefaultBackgroundTextureSize = BackgroundTexture_size;
+std::size_t DefaultGreenscreenBackgroundTextureSize = GreenscreenTexture_size;
+std::size_t DefaultKPSWindowFontSize = KPSWindowDefaultFont_size;
+
 Hotkey KeyToIncreaseKeys({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::Equal});
 Hotkey AltKeyToIncreaseKeys({sf::Keyboard::Scancode::LAlt, sf::Keyboard::Scancode::Equal});
 Hotkey KeyToDecreaseKeys({sf::Keyboard::Scancode::LControl, sf::Keyboard::Scancode::Hyphen});

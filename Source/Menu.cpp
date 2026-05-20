@@ -11,7 +11,7 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/System/Clock.hpp>
 
-#include <limits.h>
+#include <limits>
 #include <optional>
 #include <cstdint>
 
@@ -62,8 +62,8 @@ void Menu::handleEvent()
             mTabs[mSelectedTab]->mRect.setFillColor(GfxParameter::defaultRectColor);
 
             // Select new tab
-            selectTab(index);
-            mSelectedTab = index;
+            selectTab(static_cast<unsigned>(index));
+            mSelectedTab = static_cast<unsigned>(index);
 
             mTabs[index]->mRect.setFillColor(GfxParameter::defaultSelectedRectColor);
         };
@@ -312,7 +312,7 @@ void Menu::openWindow()
     std::uint32_t style;
 #ifdef _WIN32
     style = sf::Style::Close;
-#elif linux
+#elif __linux__
     style = sf::Style::Default;
 #else
 #error Unsupported compiler
@@ -350,16 +350,16 @@ ChangedParametersQueue &Menu::getChangedParametersQueue()
 
 void Menu::loadFonts()
 {
-    mFonts.loadFromMemory(Fonts::Parameter, RobotoMono, 1100000);
-    mFonts.loadFromMemory(Fonts::Value, RobotoMono, 1100000);
+    mFonts.loadFromMemory(Fonts::Parameter, RobotoMono, RobotoMono_size);
+    mFonts.loadFromMemory(Fonts::Value, RobotoMono, RobotoMono_size);
 }
 
 void Menu::loadTextures()
 {
-    mTextures.loadFromMemory(Textures::rgbCircle, RGB_Circle, 10700);
-    mTextures.loadFromMemory(Textures::vMark, vMark, 6000);
-    mTextures.loadFromMemory(Textures::xMark, xMark, 6100);
-    mTextures.loadFromMemory(Textures::Refresh, RefreshTexture, 6000);
+    mTextures.loadFromMemory(Textures::rgbCircle, RGB_Circle, RGB_Circle_size);
+    mTextures.loadFromMemory(Textures::vMark, vMark, vMark_size);
+    mTextures.loadFromMemory(Textures::xMark, xMark, xMark_size);
+    mTextures.loadFromMemory(Textures::Refresh, RefreshTexture, RefreshTexture_size);
 }
 
 void Menu::selectTab(unsigned idx)
@@ -736,12 +736,12 @@ void Menu::buildParametersMap()
     mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyKPSWindow,           new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyToOpenKPSWindow,                          "Open KPS extra window", Settings::KeyToOpenKPSWindow.toString())));
     mParameters.emplace(std::make_pair(LogicalParameter::ID::HotkeyGraphWindow,         new LogicalParameter(LogicalParameter::Type::Hotkey,          &Settings::KeyToOpenGraphWindow,                        "Open Graph window", Settings::KeyToOpenGraphWindow.toString())));
 
-    mParameters.emplace(std::make_pair(LogicalParameter::ID::SaveStatMaxKPS,              new LogicalParameter(LogicalParameter::Type::Float,         &Settings::MaxKPS,                                      "Saved max KPS", "0", 0u, INT_MAX)));
-    mParameters.emplace(std::make_pair(LogicalParameter::ID::SaveStatTotal,               new LogicalParameter(LogicalParameter::Type::Unsigned,      &Settings::Total,                                       "Saved total", "0", 0u, INT_MAX)));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::SaveStatMaxKPS,              new LogicalParameter(LogicalParameter::Type::Float,         &Settings::MaxKPS,                                      "Saved max KPS", "0", 0u, std::numeric_limits<float>::max())));
+    mParameters.emplace(std::make_pair(LogicalParameter::ID::SaveStatTotal,               new LogicalParameter(LogicalParameter::Type::Unsigned,      &Settings::Total,                                       "Saved total", "0", 0u, std::numeric_limits<float>::max())));
     for (auto i = 0ul; i < Settings::SupportedAdvancedKeysNumber; ++i)
     {
         auto id =                      LogicalParameter::ID(unsigned(LogicalParameter::ID::SaveStatTotal1) + i);
-        mParameters.emplace(std::make_pair(id,                                            new LogicalParameter(LogicalParameter::Type::Unsigned,      &Settings::KeysTotal[i],                                "Saved total " + std::to_string(i + 1), "0", 0, INT_MAX)));
+        mParameters.emplace(std::make_pair(id,                                            new LogicalParameter(LogicalParameter::Type::Unsigned,      &Settings::KeysTotal[i],                                "Saved total " + std::to_string(i + 1), "0", 0, std::numeric_limits<float>::max())));
     }
 }
 
@@ -928,7 +928,7 @@ void Menu::positionMenuLines()
                 mParameterLines.at(ParameterLine::ID::ProgramVersion)
                     ->move({0.f, halfWindowSize - step.y * 3.f + padding});
             }
-            mBounds.push_back(step.y * (row - 2u) - halfWindowSize + padding);
+            mBounds.push_back(step.y * static_cast<float>(row - 2u) - halfWindowSize + padding);
             row = 0u;
             ++column;
         }
@@ -965,11 +965,11 @@ void Menu::moveSliderBarButtons(float offset)
     const sf::Vector2f sliberbarPosition = mSliderBar.getPosition();
     const sf::Vector2u windowSize = mWindow.getSize();
     const float highBounds = sliderbarSize.y / 2;
-    const float lowBounds = mWindow.getSize().y - sliderbarSize.y / 2.f;
+    const float lowBounds = static_cast<float>(mWindow.getSize().y) - sliderbarSize.y / 2.f;
 
     const float normilizedOffset = offset / mBounds[mSelectedTab] / 1.5f;
-    const float normilizedCursorPosition = sliberbarPosition.y / windowSize.y;
-    float projectedSliderbarPositionY = windowSize.y * (normilizedCursorPosition + normilizedOffset);
+    const float normilizedCursorPosition = sliberbarPosition.y / static_cast<float>(windowSize.y);
+    float projectedSliderbarPositionY = static_cast<float>(windowSize.y) * (normilizedCursorPosition + normilizedOffset);
 
     if (projectedSliderbarPositionY < highBounds)
         projectedSliderbarPositionY = highBounds;
@@ -994,16 +994,16 @@ void Menu::moveSliderBarMouse(sf::Vector2i mousePos)
         return;
         
     const sf::Vector2f sliderbarSize = mSliderBar.getSize();
-    const float highBounds = sliderbarSize.y / 2;
-    const float lowBounds = mWindow.getSize().y - sliderbarSize.y / 2;
-    if (mousePos.y < highBounds)
-        mousePos.y = highBounds;
-    if (mousePos.y > lowBounds)
-        mousePos.y = lowBounds;
+    const float highBounds = sliderbarSize.y / 2.f;
+    const float lowBounds = static_cast<float>(mWindow.getSize().y) - sliderbarSize.y / 2.f;
+    if (static_cast<float>(mousePos.y) < highBounds)
+        mousePos.y = static_cast<int>(highBounds);
+    if (static_cast<float>(mousePos.y) > lowBounds)
+        mousePos.y = static_cast<int>(lowBounds);
 
     const float sliderbarX = mSliderBar.getPosition().x;
-    const float sliderbarY = mousePos.y;
-    const float virtualWindowHeight = mWindow.getSize().y - sliderbarSize.y;
+    const float sliderbarY = static_cast<float>(mousePos.y);
+    const float virtualWindowHeight = static_cast<float>(mWindow.getSize().y) - sliderbarSize.y;
     const float virtualCursorPositionY = sliderbarY - sliderbarSize.y / 2.f;
     const float normilizedViewHeight = virtualCursorPositionY / virtualWindowHeight;
 

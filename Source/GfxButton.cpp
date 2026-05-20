@@ -77,7 +77,7 @@ void GfxButton::draw(sf::RenderTarget &target, sf::RenderStates states) const
             target.draw(text, states);
             const auto boundsStates = states.transform.translate(text.getPosition());
 
-            if (mShowBounds && (mSelectedKeyBounds == -1 || mSelectedKeyBounds == mBtnIdx))
+            if (mShowBounds && (mSelectedKeyBounds == -1 || static_cast<unsigned>(mSelectedKeyBounds) == mBtnIdx))
             {
                 target.draw(mBounds, boundsStates);
             }
@@ -194,7 +194,7 @@ sf::Vector2f GfxButton::getScaleStep() const
 
 float GfxButton::getRiseStep() const
 {
-    return Settings::AnimationOffset / Settings::AnimationFrames;
+    return Settings::AnimationOffset / static_cast<float>(Settings::AnimationFrames);
 }
 
 void GfxButton::updateAssets()
@@ -226,7 +226,7 @@ void GfxButton::updateParameters()
     {
         const auto color = !advTextMode ? Settings::ButtonTextColor : Settings::ButtonTextAdvColor[mBtnIdx];
         const auto chSz = !advTextMode ? Settings::ButtonTextCharacterSize : Settings::ButtonTextAdvCharacterSize[mBtnIdx];
-        const auto outThck = (!advTextMode ? Settings::ButtonTextOutlineThickness : Settings::ButtonTextAdvOutlineThickness[mBtnIdx]) / 10.f;
+        const auto outThck = static_cast<float>(!advTextMode ? Settings::ButtonTextOutlineThickness : Settings::ButtonTextAdvOutlineThickness[mBtnIdx]) / 10.f;
         const auto outColor = !advTextMode ? Settings::ButtonTextOutlineColor : Settings::ButtonTextAdvOutlineColor[mBtnIdx];
         const auto bold = !advTextMode ? Settings::ButtonTextBold : Settings::ButtonTextAdvBold[mBtnIdx];
         const auto italic = !advTextMode ? Settings::ButtonTextItalic : Settings::ButtonTextAdvItalic[mBtnIdx];
@@ -364,15 +364,15 @@ void GfxButton::centerOrigins()
 
 float GfxButton::getWidth(unsigned idx)
 {
-    const float width = Settings::WindowBonusSizeLeft + 
-        (Settings::GfxButtonTextureSize.x + Settings::GfxButtonDistance) * idx + 
-        Settings::GfxButtonTextureSize.x / 2;
+    const float width = static_cast<float>(Settings::WindowBonusSizeLeft) +
+        (static_cast<float>(Settings::GfxButtonTextureSize.x) + Settings::GfxButtonDistance) * static_cast<float>(idx) +
+        static_cast<float>(Settings::GfxButtonTextureSize.x) / 2.f;
     return width;
 }
 
-float GfxButton::getHeight(unsigned idx)
+float GfxButton::getHeight([[maybe_unused]] unsigned idx)
 {
-    const float height = Settings::WindowBonusSizeTop + Settings::GfxButtonTextureSize.y / 2;
+    const float height = static_cast<float>(Settings::WindowBonusSizeTop) + static_cast<float>(Settings::GfxButtonTextureSize.y) / 2.f;
     return height;
 }
 
@@ -567,7 +567,7 @@ void GfxButton::RectEmitter::create(float deltaSeconds, sf::Vector2f buttonSize)
     mUsedRectIndices.emplace_back(rectIndex);
 }
 
-void GfxButton::RectEmitter::scaleTexture(sf::Vector2f buttonSize)
+void GfxButton::RectEmitter::scaleTexture([[maybe_unused]] sf::Vector2f buttonSize)
 {
 }
 
@@ -593,7 +593,7 @@ sf::Transform GfxButton::RectEmitter::getPressRectTransform(sf::Transform transf
     return transform;
 }
 
-float GfxButton::RectEmitter::getVertexProgress(size_t vertexNumber, float vertexHeight) const
+float GfxButton::RectEmitter::getVertexProgress([[maybe_unused]] size_t vertexNumber, float vertexHeight) const
 {
     const auto isInSupportedRange = mBtnIdx < Settings::SupportedAdvancedKeysNumber;
     const auto advMode = isInSupportedRange && Settings::KeyPressVisAdvSettingsMode;

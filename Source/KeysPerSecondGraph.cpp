@@ -13,16 +13,16 @@ KeysPerSecondGraph::KeysPerSecondGraph()
 : mVertecies(sf::PrimitiveType::TriangleFan, 16)
 , mActiveVertecies(16)
 {
-    srand(time(NULL));
+    srand(static_cast<unsigned>(time(NULL)));
 
     const float widthStep = 800.f / 13.f;
-    float width = 0;
-    float height = 600;
+    float width = 0.f;
+    float height = 600.f;
     for (unsigned i = 0; i < 14; ++i)
     {
         sf::Vertex &vertex = mVertecies[i];
         vertex.position.x = width;
-        vertex.position.y = height - i * 20;
+        vertex.position.y = height - static_cast<float>(i * 20u);
         width += widthStep;
     }
     mVertecies[14].position = sf::Vector2f(800, 600);
@@ -88,5 +88,6 @@ void KeysPerSecondGraph::updateParameters()
 
 bool KeysPerSecondGraph::parameterIdMatches(LogicalParameter::ID id)
 {
+    (void)id;
     return false;
 }

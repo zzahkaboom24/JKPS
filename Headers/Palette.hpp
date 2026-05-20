@@ -45,6 +45,7 @@ class Palette
         std::array<sf::Vertex, 3050> mLine;
         sf::FloatRect mLineRect;
         sf::RectangleShape mLineIndicator;
+        sf::Vector2f mNormilizedMousePos;
         sf::Color mIndicatorColor;
         int mLineElemIdx;
         bool wasButtonPressedOnLine;
@@ -53,8 +54,6 @@ class Palette
         sf::FloatRect mCanvasRect;
         sf::CircleShape mCanvasIndicator;
         bool wasButtonPressedOnCanvas;
-
-        sf::Vector2f mNormilizedMousePos;
 
         static float mDistance;
 };

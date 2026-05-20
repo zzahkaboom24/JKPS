@@ -283,11 +283,9 @@ void Application::unloadChangesQueue()
 
         if (Button::parameterIdMatches(pair.first))
         {
-            unsigned idx = 0;
             for (auto &button : mButtons)
             {
                 button->updateParameters();
-                ++idx;
             }
             (*mButtonsPositioner)();
         }
@@ -349,40 +347,40 @@ void Application::resetAssets()
 void Application::loadTextures()
 {
     if (!mTextures.loadFromFile(Textures::Button, Settings::GfxButtonTexturePath))
-        mTextures.loadFromMemory(Textures::Button, Settings::DefaultButtonTexture, 2700);
+        mTextures.loadFromMemory(Textures::Button, Settings::DefaultButtonTexture, Settings::DefaultButtonTextureSize);
 
     if (!mTextures.loadFromFile(Textures::Animation, Settings::AnimationTexturePath))
-        mTextures.loadFromMemory(Textures::Animation, Settings::DefaultAnimationTexture, 15800);
+        mTextures.loadFromMemory(Textures::Animation, Settings::DefaultAnimationTexture, Settings::DefaultAnimationTextureSize);
 
     Settings::isGreenscreenSet = Settings::BackgroundTexturePath == "GreenscreenBG.png";
     if (Settings::isGreenscreenSet)
-        mTextures.loadFromMemory(Textures::Background, Settings::DefaultGreenscreenBackgroundTexture, 596);
+        mTextures.loadFromMemory(Textures::Background, Settings::DefaultGreenscreenBackgroundTexture, Settings::DefaultGreenscreenBackgroundTextureSize);
     else
     {
         if (!mTextures.loadFromFile(Textures::Background, Settings::BackgroundTexturePath))
-            mTextures.loadFromMemory(Textures::Background, Settings::DefaultBackgroundTexture, 2700);
+            mTextures.loadFromMemory(Textures::Background, Settings::DefaultBackgroundTexture, Settings::DefaultBackgroundTextureSize);
     }
 }
 
 void Application::loadFonts()
 {
     if (!mFonts.loadFromFile(Fonts::ButtonValue, Settings::ButtonTextFontPath))
-        mFonts.loadFromMemory(Fonts::ButtonValue, Settings::KeyCountersDefaultFont, 581700);
+        mFonts.loadFromMemory(Fonts::ButtonValue, Settings::KeyCountersDefaultFont, Settings::KeyCountersDefaultFontSize);
 
     if (!mFonts.loadFromFile(Fonts::Statistics, Settings::StatisticsTextFontPath))
-        mFonts.loadFromMemory(Fonts::Statistics, Settings::StatisticsDefaultFont, 581700);
+        mFonts.loadFromMemory(Fonts::Statistics, Settings::StatisticsDefaultFont, Settings::StatisticsDefaultFontSize);
 
     if (!mFonts.loadFromFile(Fonts::KPSText, Settings::KPSWindowTextFontPath))
-        mFonts.loadFromMemory(Fonts::KPSText, Settings::DefaultKPSWindowFont, 459300);
+        mFonts.loadFromMemory(Fonts::KPSText, Settings::DefaultKPSWindowFont, Settings::DefaultKPSWindowFontSize);
 
     if (!mFonts.loadFromFile(Fonts::KPSNumber, Settings::KPSWindowNumberFontPath))
-        mFonts.loadFromMemory(Fonts::KPSNumber, Settings::DefaultKPSWindowFont, 459300);
+        mFonts.loadFromMemory(Fonts::KPSNumber, Settings::DefaultKPSWindowFont, Settings::DefaultKPSWindowFontSize);
 }
 
 void Application::loadIcon()
 {
     sf::Image icon;
-    (void)icon.loadFromMemory(IconTexture, 53200); // Cast to void to silence nodiscard warning
+    (void)icon.loadFromMemory(IconTexture, IconTexture_size); // Cast to void to silence nodiscard warning
     mWindow.setIcon({256, 256}, icon.getPixelsPtr());
 }
 
@@ -418,7 +416,7 @@ void Application::buildButtons()
     if (logKeyQueue.empty())
         logKeyQueue = ConfigHelper::getLogKeys();
 
-    for (auto i = 0ul; !logKeyQueue.empty(); ++i)
+    while (!logKeyQueue.empty())
     {
         addButton(logKeyQueue.front());
         logKeyQueue.pop();
@@ -438,9 +436,9 @@ bool Application::isPressPerformedOnButton(unsigned &btnIdx) const
     const auto size = Button::size();
     for (auto i = 0ul; i < size; ++i)
     {
-        if (isMouseInRange(i))
+        if (isMouseInRange(static_cast<unsigned>(i)))
         {
-            btnIdx = i;
+            btnIdx = static_cast<unsigned>(i);
             return true;
         }
     }
@@ -476,7 +474,7 @@ void Application::openWindow()
     std::uint32_t style;
 #ifdef _WIN32
     style = Settings::WindowTitleBar ? sf::Style::Close : sf::Style::None;
-#elif linux
+#elif __linux__
     style = Settings::WindowTitleBar ? sf::Style::Default : sf::Style::None;
 #else
 #error Unsupported compiler
@@ -524,22 +522,22 @@ void Application::moveWindow()
 
 unsigned Application::getWindowWidth()
 {
-    const auto btnAmt = static_cast<int>(Button::size());
+    const auto btnAmt = static_cast<float>(Button::size());
     const auto width = static_cast<int>(
-        Settings::GfxButtonTextureSize.x * btnAmt + 
-        (btnAmt - 1) * Settings::GfxButtonDistance + 
-        Settings::WindowBonusSizeLeft + Settings::WindowBonusSizeRight);
-    
-    return std::max(5, width);
+        static_cast<float>(Settings::GfxButtonTextureSize.x) * btnAmt +
+        (btnAmt - 1.f) * Settings::GfxButtonDistance +
+        static_cast<float>(Settings::WindowBonusSizeLeft) + static_cast<float>(Settings::WindowBonusSizeRight));
+
+    return static_cast<unsigned>(std::max(5, width));
 }
 
 unsigned Application::getWindowHeight()
 {
     const auto height = static_cast<int>(
-        Settings::GfxButtonTextureSize.y + Settings::WindowBonusSizeTop + 
-        Settings::WindowBonusSizeBottom);
-    
-    return std::max(5, height);
+        static_cast<float>(Settings::GfxButtonTextureSize.y) + static_cast<float>(Settings::WindowBonusSizeTop) +
+        static_cast<float>(Settings::WindowBonusSizeBottom));
+
+    return static_cast<unsigned>(std::max(5, height));
 }
 
 sf::IntRect Application::getWindowRect()

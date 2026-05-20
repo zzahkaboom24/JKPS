@@ -51,11 +51,11 @@ class LogButton
         const unsigned mBtnIdx;
         bool mState;
         sf::Color mPressAltColor;
-		unsigned mLastAccumulateBpmBufferIndex;
-        
+
         // Calculation related
         std::array<unsigned, 60lu> mBuffer;
         std::array<float, 7lu> mPrevKpsBuffer;
+		unsigned mLastAccumulateBpmBufferIndex;
         static unsigned mBufferIndex;
         static unsigned mPrevKpsBufferIndex;
     

@@ -17,13 +17,13 @@ static int sLastGroup(-1);           // last key group that was pressed (0 = lef
 static bool sHeld[4] = {};           // whether each of the first 4 buttons is currently held
 
 LogButton::LogButton(const unsigned idx, LogKey &key)
-: mState(false)
-, mPressAltColor(sf::Color::White)
-, mLastAccumulateBpmBufferIndex(mBuffer.size())
-, mKey(key)
+: mKey(key)
 , mKeysPerSecond(0)
 , mTotal(0)
 , mBtnIdx(idx)
+, mState(false)
+, mPressAltColor(sf::Color::White)
+, mLastAccumulateBpmBufferIndex(60u)
 {
     statMaxKeysPerSecond = Settings::MaxKPS;
     statTotal = Settings::Total;
@@ -95,8 +95,8 @@ void LogButton::moveIndex()
         mBufferIndex = 0;
     if (++mPrevKpsBufferIndex == 7)
         mPrevKpsBufferIndex = 0;
-    
-	statBeatsPerMinute = 0;
+
+    statBeatsPerMinute = 0.f;
 }
 
 void LogButton::accumulateBeatsPerMinute()
@@ -110,7 +110,8 @@ void LogButton::accumulateBeatsPerMinute()
 
 void LogButton::reset()
 {
-    mKeysPerSecond = mTotal = statKeysPerSecond = statTotal = statBeatsPerMinute = statMaxKeysPerSecond = Settings::MaxKPS = Settings::Total = Settings::KeysTotal[mBtnIdx] = 0;
+    mKeysPerSecond = statKeysPerSecond = statBeatsPerMinute = statMaxKeysPerSecond = Settings::MaxKPS = 0.f;
+    mTotal = statTotal = Settings::Total = Settings::KeysTotal[mBtnIdx] = 0u;
     for (auto &elem : mBuffer)
         elem = 0;
     for (auto &elem : mPrevKpsBuffer)
@@ -144,7 +145,7 @@ float LogButton::getLocalBeatsPerMinute() const
         prevKpsSum += elem;
 
     // 15 = 60 (sec) / 4 (1/4 time signature for streams)
-    return prevKpsSum / mPrevKpsBuffer.size() * 15;
+    return prevKpsSum / static_cast<float>(mPrevKpsBuffer.size()) * 15.f;
 }
 
 sf::Color LogButton::getAltColor() const

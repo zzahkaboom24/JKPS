@@ -129,7 +129,7 @@ void GfxParameter::setRightTexture()
 {
     assert(mTextures);
     if (!mValText) return;
-    std::string str = static_cast<std::string>(mValText->getString());
+    std::string str = mValText->getString().toAnsiString();
     if (str == "True" || str == "true" || str == "TRUE")
         mSprite.emplace(mTextures->get(Textures::vMark));
     else

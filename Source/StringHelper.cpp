@@ -31,7 +31,7 @@ std::string readValue(const std::string &str, unsigned n)
 
     std::string retVal;
     // Write everything in new str until newline or comma
-    for (unsigned i = 0; idx < str.size() && str[idx] != ','; ++idx, ++i)
+    for (; idx < str.size() && str[idx] != ','; ++idx)
     {
         retVal += str[idx];
     }
@@ -342,9 +342,25 @@ bool isButton(const std::string &str)
 
 std::string scancodeToStr(sf::Keyboard::Scancode scancode, bool saveToCfg)
 {
-    // Handle scancodes that have no Key equivalent
-    if (scancode == sf::Keyboard::Scancode::NonUsBackslash)
-        return saveToCfg ? "NonUsBackslash" : "<>";
+    // Handle punctuation/symbol scancodes directly to avoid localize() failures on
+    // non-US keyboard layouts (e.g. German) where these keys produce characters with
+    // no sf::Keyboard::Key enum value, causing localize() to return Unknown.
+    switch (scancode)
+    {
+        case sf::Keyboard::Scancode::NonUsBackslash: return saveToCfg ? "NonUsBackslash" : "<>";
+        case sf::Keyboard::Scancode::LBracket:   return saveToCfg ? "LBracket"  : "[";
+        case sf::Keyboard::Scancode::RBracket:   return saveToCfg ? "RBracket"  : "]";
+        case sf::Keyboard::Scancode::Semicolon:  return saveToCfg ? "Semicolon" : ";";
+        case sf::Keyboard::Scancode::Apostrophe: return saveToCfg ? "Quote"     : "'";
+        case sf::Keyboard::Scancode::Grave:      return saveToCfg ? "Tilde"     : "`";
+        case sf::Keyboard::Scancode::Backslash:  return saveToCfg ? "Backslash" : "\\";
+        case sf::Keyboard::Scancode::Equal:      return saveToCfg ? "Equal"     : "=";
+        case sf::Keyboard::Scancode::Hyphen:     return saveToCfg ? "Hyphen"    : "-";
+        case sf::Keyboard::Scancode::Comma:      return saveToCfg ? "Comma"     : ",";
+        case sf::Keyboard::Scancode::Period:     return saveToCfg ? "Period"    : ".";
+        case sf::Keyboard::Scancode::Slash:      return saveToCfg ? "Slash"     : "/";
+        default: break;
+    }
 
     // For all other scancodes, convert to Key and use existing keyToStr
     sf::Keyboard::Key key = sf::Keyboard::localize(scancode);
@@ -352,14 +368,26 @@ std::string scancodeToStr(sf::Keyboard::Scancode scancode, bool saveToCfg)
         return keyToStr(key, saveToCfg);
 
     // Fallback: return the scancode description from SFML
-    return std::string(sf::Keyboard::getDescription(scancode));
+    return sf::Keyboard::getDescription(scancode).toAnsiString();
 }
 
 sf::Keyboard::Scancode strToScancode(const std::string &str)
 {
-    // Handle special scancode-only keys
+    // Handle punctuation/symbol keys directly to avoid delocalize() failures on
+    // non-US keyboard layouts where these keys may not exist as sf::Keyboard::Key values.
     if (str == "NonUsBackslash" || str == "<>" || str == "<" || str == ">")
         return sf::Keyboard::Scancode::NonUsBackslash;
+    if (str == "LBracket"  || str == "[")  return sf::Keyboard::Scancode::LBracket;
+    if (str == "RBracket"  || str == "]")  return sf::Keyboard::Scancode::RBracket;
+    if (str == "Semicolon" || str == ";")  return sf::Keyboard::Scancode::Semicolon;
+    if (str == "Quote"     || str == "'")  return sf::Keyboard::Scancode::Apostrophe;
+    if (str == "Tilde"     || str == "`")  return sf::Keyboard::Scancode::Grave;
+    if (str == "Backslash" || str == "\\") return sf::Keyboard::Scancode::Backslash;
+    if (str == "Equal"     || str == "=")  return sf::Keyboard::Scancode::Equal;
+    if (str == "Hyphen"    || str == "-")  return sf::Keyboard::Scancode::Hyphen;
+    if (str == "Comma"     || str == ",")  return sf::Keyboard::Scancode::Comma;
+    if (str == "Period"    || str == ".")  return sf::Keyboard::Scancode::Period;
+    if (str == "Slash"     || str == "/")  return sf::Keyboard::Scancode::Slash;
 
     // For all other strings, convert via Key and delocalize
     sf::Keyboard::Key key = strToKey(str);

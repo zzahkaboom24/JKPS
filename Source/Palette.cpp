@@ -13,7 +13,7 @@ float Palette::mDistance(0.2f);
 
 Palette::Palette(int)
 : mWindowOffset(5.f, 10.f)
-, mLineSize(mLine.size())
+, mLineSize(3050u)
 , mNormilizedMousePos(0.f, 0.f)
 , mIndicatorColor(sf::Color::White)
 , mLineElemIdx(0)
@@ -23,16 +23,16 @@ Palette::Palette(int)
     mWindow.setFramerateLimit(60);
 
     auto color = sf::Color::Red;
-    float colorStep = mLineSize / 2, leftSide = 5.f, rightSide = 25.f;
+    float colorStep = static_cast<float>(mLineSize) / 2.f, leftSide = 5.f, rightSide = 25.f;
     for (unsigned i = 0; i < mLineSize; i += 2)
     {
-        float y = mDistance * i / 2;
+        float y = mDistance * static_cast<float>(i) / 2.f;
         mLine[i].position = sf::Vector2f(leftSide, y);
         mLine[i].color = color;
         mLine[i + 1].position = sf::Vector2f(rightSide, y);
         mLine[i + 1].color = color;
 
-        color = rgb((i + 2) / 2 / colorStep);
+        color = rgb(static_cast<double>((i + 2) / 2) / static_cast<double>(colorStep));
     }
 
     mLineRect = sf::FloatRect(
@@ -97,13 +97,13 @@ void Palette::moveLineIndicator()
         if (mousePos.y < 0)
             mousePos.y = 0;
 
-        if (mousePos.y > mLine[mLineSize - 1].position.y)
-            mousePos.y = mLine[mLineSize - 1].position.y;
+        if (static_cast<float>(mousePos.y) > mLine[mLineSize - 1].position.y)
+            mousePos.y = static_cast<int>(mLine[mLineSize - 1].position.y);
 
-        if (mousePos.y >= 0 && mousePos.y <= mLine[mLineSize - 1].position.y)
+        if (mousePos.y >= 0 && static_cast<float>(mousePos.y) <= mLine[mLineSize - 1].position.y)
             mLineElemIdx = positionToNumber(mousePos);
 
-        mLineIndicator.setPosition({mLineIndicator.getPosition().x, mLine[mLineElemIdx].position.y});
+        mLineIndicator.setPosition({mLineIndicator.getPosition().x, mLine[static_cast<size_t>(mLineElemIdx)].position.y});
     }
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
         goUp();
@@ -122,10 +122,10 @@ void Palette::goUp()
 
 void Palette::goDown()
 {
-    if (mLineElemIdx + 2 <= mLineSize - 1)
+    if (static_cast<unsigned>(mLineElemIdx + 2) <= mLineSize - 1u)
         mLineElemIdx += 2;
     else
-        mLineElemIdx = mLineSize - 1;
+        mLineElemIdx = static_cast<int>(mLineSize - 1u);
 }
 
 void Palette::moveCanvasIndicator()
@@ -134,28 +134,28 @@ void Palette::moveCanvasIndicator()
         static_cast<sf::Vector2i>(mWindowOffset);
 
     // Make canvas indicator move even if cursor is outside the palette
-    if (mousePos.x < mCanvasRect.position.x)
-        mousePos.x = mCanvasRect.position.x;
+    if (static_cast<float>(mousePos.x) < mCanvasRect.position.x)
+        mousePos.x = static_cast<int>(mCanvasRect.position.x);
 
-    if (mousePos.x > mCanvasRect.size.x + mCanvasRect.position.x)
-        mousePos.x = mCanvasRect.size.x + mCanvasRect.position.x;
+    if (static_cast<float>(mousePos.x) > mCanvasRect.size.x + mCanvasRect.position.x)
+        mousePos.x = static_cast<int>(mCanvasRect.size.x + mCanvasRect.position.x);
 
-    if (mousePos.y < mCanvasRect.position.y)
-        mousePos.y = mCanvasRect.position.y;
+    if (static_cast<float>(mousePos.y) < mCanvasRect.position.y)
+        mousePos.y = static_cast<int>(mCanvasRect.position.y);
 
-    if (mousePos.y > mCanvasRect.size.y)
-        mousePos.y = mCanvasRect.size.y;
+    if (static_cast<float>(mousePos.y) > mCanvasRect.size.y)
+        mousePos.y = static_cast<int>(mCanvasRect.size.y);
 
     mNormilizedMousePos = sf::Vector2f(
-        (mousePos.x - mCanvasRect.position.x) / mCanvasRect.size.x, 
-        (mousePos.y - mCanvasRect.position.y) / mCanvasRect.size.y);
+        (static_cast<float>(mousePos.x) - mCanvasRect.position.x) / mCanvasRect.size.x,
+        (static_cast<float>(mousePos.y) - mCanvasRect.position.y) / mCanvasRect.size.y);
     
     mCanvasIndicator.setPosition(sf::Vector2f(mousePos));
 }
 
 void Palette::setColor()
 {
-    mCanvas[3].color = mLine[mLineElemIdx].color;
+    mCanvas[3].color = mLine[static_cast<size_t>(mLineElemIdx)].color;
 
     mIndicatorColor = sf::Color(bilinearInterp(
         mCanvas[0].color,
@@ -185,12 +185,12 @@ void Palette::processOwnEvents()
                 return;
             }
 
-            mLineIndicator.setPosition({mLineIndicator.getPosition().x, mLine[mLineElemIdx].position.y});
+            mLineIndicator.setPosition({mLineIndicator.getPosition().x, mLine[static_cast<size_t>(mLineElemIdx)].position.y});
             setColor();
         }
 
         // Don't move the indicator of anything if the left mouse button wasn't pressed on that area
-        if (const auto* mouseBtn = event->getIf<sf::Event::MouseButtonPressed>())
+        if (event->is<sf::Event::MouseButtonPressed>())
         {
             const auto mousePos = 
 				static_cast<sf::Vector2f>(sf::Mouse::getPosition(mWindow)) -
@@ -225,26 +225,26 @@ void Palette::render()
     mWindow.display();
 }
 
-void Palette::setColorOnPalette(sf::Color color)
+void Palette::setColorOnPalette([[maybe_unused]] sf::Color color)
 {
     // set cursor on the palette
 }
 
-void Palette::openWindow(sf::Vector2i position)
+void Palette::openWindow([[maybe_unused]] sf::Vector2i position)
 {
     if (!mWindow.isOpen())
     {
         std::uint32_t style;
 #ifdef _WIN32
         style = sf::Style::Close;
-#elif linux
+#elif __linux__
         style = sf::Style::Default;
 #else
 #error Unsupported compiler
 #endif
 
         const auto width = 340.f + mWindowOffset.x * 2.f;
-        const auto height = mDistance * (mLineSize - 1) / 2.f + mWindowOffset.y * 2.f;
+        const auto height = mDistance * static_cast<float>(mLineSize - 1u) / 2.f + mWindowOffset.y * 2.f;
 
         mWindow.create(sf::VideoMode({static_cast<unsigned>(width), static_cast<unsigned>(height)}), "JKPS RGB color selector", style);
         mWindow.setKeyRepeatEnabled(false);
@@ -273,12 +273,12 @@ sf::Color Palette::rgb(double ratio)
     std::uint8_t red = 0, grn = 0, blu = 0;
     switch(normalized / 256)
     {
-    case 0: red = 255;      grn = 0;        blu = x;       break; // red -> magenta
-    case 1: red = 255 - x;  grn = 0;        blu = 255;     break; // magenta -> blue
-    case 2: red = 0;        grn = x;        blu = 255;     break; // blue -> cyan
-    case 3: red = 0;        grn = 255;      blu = 255 - x; break; // cyan -> green
-    case 4: red = x;        grn = 255;      blu = 0;       break; // green -> yellow
-    case 5: red = 255;      grn = 255 - x;  blu = 0;       break; // yellow -> red
+    case 0: red = 255;                        grn = 0;                        blu = static_cast<std::uint8_t>(x);       break; // red -> magenta
+    case 1: red = static_cast<std::uint8_t>(255 - x); grn = 0;               blu = 255;                                break; // magenta -> blue
+    case 2: red = 0;                          grn = static_cast<std::uint8_t>(x);        blu = 255;                    break; // blue -> cyan
+    case 3: red = 0;                          grn = 255;                      blu = static_cast<std::uint8_t>(255 - x); break; // cyan -> green
+    case 4: red = static_cast<std::uint8_t>(x);        grn = 255;            blu = 0;                                  break; // green -> yellow
+    case 5: red = 255;                        grn = static_cast<std::uint8_t>(255 - x);  blu = 0;                      break; // yellow -> red
     }
 
     return { red, grn, blu };

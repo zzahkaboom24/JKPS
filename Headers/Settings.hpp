@@ -8,6 +8,7 @@
 #include "GfxStatisticsLine.hpp"
 
 #include <string>
+#include <cstddef>
 #include <array>
 
 
@@ -179,6 +180,14 @@ namespace Settings
     extern unsigned char* DefaultGreenscreenBackgroundTexture;
     extern unsigned char* DefaultKPSWindowFont;
     extern unsigned char* KeyPressVisTexture;
+
+    extern std::size_t KeyCountersDefaultFontSize;
+    extern std::size_t StatisticsDefaultFontSize;
+    extern std::size_t DefaultButtonTextureSize;
+    extern std::size_t DefaultAnimationTextureSize;
+    extern std::size_t DefaultBackgroundTextureSize;
+    extern std::size_t DefaultGreenscreenBackgroundTextureSize;
+    extern std::size_t DefaultKPSWindowFontSize;
 
     // Hot keys
     extern Hotkey KeyToIncreaseKeys;

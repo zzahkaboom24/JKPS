@@ -202,6 +202,8 @@ std::string scanParameterValue(const std::string &parName, bool &isParamFound, b
     while (!cfg.eof() && i != parLen)
     {
         getline(cfg, line);
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
 
         if (line.empty())
             continue;
@@ -243,7 +245,7 @@ std::string scanParameterValue(const std::string &parName, bool &isParamFound, b
 
     isParamFound = true;
     isValueNull = false;
-    return std::string(line.begin() + parLen + 2ul, line.end());
+    return std::string(line.begin() + static_cast<std::string::difference_type>(parLen + 2ul), line.end());
 }
 
 bool isToCheck(LogicalParameter::Type type)
@@ -539,13 +541,13 @@ std::queue<LogKey> readKeys(const std::string &keysStr, const std::string &visua
     auto strIdx1 = 0lu, strIdx2 = 0lu;
     const auto len = ConfigHelper::separationSign.length();
 
-    for (unsigned i = 0; strIdx1 < keysStr.size(); ++i)
+    for (; strIdx1 < keysStr.size();)
     {
         std::string keyStr(keysStr, strIdx1, keysStr.substr(strIdx1).find(ConfigHelper::separationSign));
         std::string visualKeyStr(visualKeysStr, strIdx2, visualKeysStr.substr(strIdx2).find(ConfigHelper::separationSign));   
         std::string checkStr;
         sf::Keyboard::Scancode scancode = sf::Keyboard::Scancode::Unknown;
-        sf::Mouse::Button button;
+        sf::Mouse::Button button = sf::Mouse::Button::Left;
 
         const bool isKeyB = isKey(keyStr);
         const bool isButtonB = isButton(keyStr);
@@ -567,7 +569,7 @@ std::queue<LogKey> readKeys(const std::string &keysStr, const std::string &visua
             checkStr = btnToStr(button);
         }
             
-        unsigned maxLength = 20u;
+        const auto maxLength = 20ul;
         if (visualKeyStr.size() > maxLength || visualKeyStr.size() == 0)
             visualKeyStr = checkStr;
 
@@ -593,7 +595,7 @@ std::queue<LogKey> oldReadKeys(const std::string &keysStr, const std::string &vi
     std::queue<LogKey> logKeysQueue;
     unsigned strIdx1 = 0u, strIdx2 = 0u;
 
-    for (unsigned i = 0u; strIdx1 < keysStr.size(); ++i)
+    for (; strIdx1 < keysStr.size();)
     {
         std::string keyStr(keysStr, strIdx1, keysStr.substr(strIdx1).find(','));
         std::string visualKeyStr(visualKeysStr, strIdx2, visualKeysStr.substr(strIdx2).find(','));
@@ -604,12 +606,12 @@ std::queue<LogKey> oldReadKeys(const std::string &keysStr, const std::string &vi
         {
             if (keysStr.find(',', strIdx1) == std::string::npos)
                 break;
-            strIdx1 = keysStr.find(',', strIdx1) + 1;
-            strIdx2 = visualKeysStr.find(',', strIdx2) + 1;
+            strIdx1 = static_cast<unsigned>(keysStr.find(',', strIdx1) + 1);
+            strIdx2 = static_cast<unsigned>(visualKeysStr.find(',', strIdx2) + 1);
         }
 
         checkStr = scancodeToStr(scancode, true);
-        unsigned maxLength = 20;
+        const auto maxLength = 20ul;
         if (visualKeyStr.size() > maxLength || visualKeyStr.size() == 0)
             visualKeyStr = checkStr;
 
@@ -619,8 +621,8 @@ std::queue<LogKey> oldReadKeys(const std::string &keysStr, const std::string &vi
         if (keysStr.find(',', strIdx1) == std::string::npos)
             break;
 
-        strIdx1 = keysStr.find(',', strIdx1) + 1;
-        strIdx2 = visualKeysStr.find(',', strIdx2) + 1;
+        strIdx1 = static_cast<unsigned>(keysStr.find(',', strIdx1) + 1);
+        strIdx2 = static_cast<unsigned>(visualKeysStr.find(',', strIdx2) + 1);
     }
 
     return logKeysQueue;
@@ -631,7 +633,7 @@ std::queue<LogKey> oldReadButtons(const std::string &buttonsStr, const std::stri
     std::queue<LogKey> logBtnQueue;
     unsigned strIdx1 = 0, strIdx2 = 0;
 
-    for (unsigned i = 0; strIdx1 < buttonsStr.size(); ++i)
+    for (; strIdx1 < buttonsStr.size();)
     {
         std::string buttonStr(buttonsStr, strIdx1, buttonsStr.substr(strIdx1).find(','));
         std::string visualButtonStr(visualButtonsStr, strIdx2, visualButtonsStr.substr(strIdx2).find(','));
@@ -640,7 +642,7 @@ std::queue<LogKey> oldReadButtons(const std::string &buttonsStr, const std::stri
         sf::Mouse::Button button = strToBtn(buttonStr);
 
         checkStr = btnToStr(button);
-        unsigned maxLength = 20;
+        const auto maxLength = 20ul;
         if (visualButtonStr.size() > maxLength || visualButtonStr.size() == 0)
             visualButtonStr = checkStr;
 
@@ -650,8 +652,8 @@ std::queue<LogKey> oldReadButtons(const std::string &buttonsStr, const std::stri
         if (buttonsStr.find(',', strIdx1) == std::string::npos)
             break;
 
-        strIdx1 = buttonsStr.find(',', strIdx1) + 1;
-        strIdx2 = visualButtonsStr.find(',', strIdx2) + 1;
+        strIdx1 = static_cast<unsigned>(buttonsStr.find(',', strIdx1) + 1);
+        strIdx2 = static_cast<unsigned>(visualButtonsStr.find(',', strIdx2) + 1);
     }
 
     return logBtnQueue;

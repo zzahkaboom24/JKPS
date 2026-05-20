@@ -48,7 +48,7 @@ else()
     )
 endif()
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC PROGRAM_VERSION="0.5.0")
+target_compile_definitions(${PROJECT_NAME} PUBLIC PROGRAM_VERSION="0.6.0")
 
 find_package(Threads REQUIRED)
 find_package(SFML 3 REQUIRED COMPONENTS System Window Graphics)
