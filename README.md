@@ -11,7 +11,7 @@ To make your own theme you have to provide textures and fonts which you should p
 
 # Themes
 
-These themes may be compatible only with the newest version (v0.2), if you want to use an old program version then you should look up [here](https://www.dropbox.com/sh/198quwutazjbpza/AADUHDhlNqCA5mYhUh1D0GDZa?dl=0) for old themes.
+These themes may be compatible only with the newest version (v0.2), if you want to use an old program version then you should look up [here](https://github.com/zzahkaboom24/JKPS/tree/themes/Themes/old) for old themes.
 Themes are in order from new to old (click the name to download)
 
 # [Celestial blue](https://github.com/zzahkaboom24/JKPS/raw/refs/heads/themes/Themes/celestial-blue.zip)
